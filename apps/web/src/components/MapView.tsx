@@ -114,7 +114,7 @@ export function PointPickerMap({
  * endpoint, and the road route coloured by per-segment risk.
  */
 export function RoutePickerMap({
-  origin, dest, onOriginChange, onDestChange, clickTarget, segments = [], riskiestSegId = 0,
+  origin, dest, onOriginChange, onDestChange, clickTarget, segments = [], riskiestSegId = 0, zoomControl = true,
 }: {
   origin: LatLon;
   dest: LatLon;
@@ -123,6 +123,7 @@ export function RoutePickerMap({
   clickTarget: 'origin' | 'dest';
   segments?: RouteSegment[];
   riskiestSegId?: number;
+  zoomControl?: boolean;
 }) {
   const mid: [number, number] = segments.length
     ? [segments[Math.floor(segments.length / 2)].lat, segments[Math.floor(segments.length / 2)].lon]
@@ -130,7 +131,7 @@ export function RoutePickerMap({
   const [k] = useState(() => `rt-${Math.random().toString(36).slice(2)}`);
 
   return (
-    <MapContainer key={k} center={mid} zoom={12} className="h-full w-full" scrollWheelZoom>
+    <MapContainer key={k} center={mid} zoom={12} className="h-full w-full" scrollWheelZoom zoomControl={zoomControl}>
       <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
       <ClickToSet onSet={clickTarget === 'origin' ? onOriginChange : onDestChange} />
       <Recenter center={mid} />

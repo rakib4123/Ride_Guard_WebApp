@@ -8,7 +8,7 @@ import { PlaceholderBanner } from '@/components/PlaceholderBanner';
 import { AccountBar } from '@/components/AccountBar';
 
 const AUTH_ROUTES = ['/login', '/signup'];
-const FULL_BLEED = ['/now', '/']; // map-first screens manage their own chrome
+const FULL_BLEED = ['/now', '/', '/map', '/route']; // map-first screens manage their own chrome
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
