@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import {
   DEFAULT_PROFILE,
   DEFAULT_TOGGLES,
@@ -30,17 +30,27 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     Time_of_Day: 'Morning',
   });
 
-  const value = useMemo<ProfileState>(
-    () => ({
-      profile,
-      toggles,
-      context,
-      setProfile: (p) => setProfileState((cur) => ({ ...cur, ...p })),
-      setToggles: (t) => setTogglesState((cur) => ({ ...cur, ...t })),
-      setContext: (c) => setContextState((cur) => ({ ...cur, ...c })),
-      features: { ...profile, ...toggles, ...context },
-    }),
+  const setProfile = useCallback(
+    (p: Partial<RiderProfile>) => setProfileState((cur) => ({ ...cur, ...p })),
+    [],
+  );
+  const setToggles = useCallback(
+    (t: Partial<TripToggles>) => setTogglesState((cur) => ({ ...cur, ...t })),
+    [],
+  );
+  const setContext = useCallback(
+    (c: Partial<TripContext>) => setContextState((cur) => ({ ...cur, ...c })),
+    [],
+  );
+
+  const features = useMemo<FeatureVector>(
+    () => ({ ...profile, ...toggles, ...context }),
     [profile, toggles, context],
+  );
+
+  const value = useMemo<ProfileState>(
+    () => ({ profile, toggles, context, setProfile, setToggles, setContext, features }),
+    [profile, toggles, context, setProfile, setToggles, setContext, features],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
