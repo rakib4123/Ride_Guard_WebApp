@@ -1,0 +1,36 @@
+# Render Blueprint — deploys the NestJS API and the Python model service.
+# In Render: New + → Blueprint → pick your repo. Then set the two "sync: false"
+# env vars (see comments) and the web URL once Vercel is live.
+services:
+  - type: web
+    name: rideguard-api
+    runtime: node
+    plan: free
+    # `npm install` auto-builds @rideguard/shared (its prepare script), then we build the API.
+    buildCommand: npm install && npm run build --workspace @rideguard/api
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20.18.0"
+      # Your Vercel site URL, e.g. https://rideguard.vercel.app  (set after deploying web)
+      - key: CORS_ORIGINS
+        sync: false
+      # The model service URL below, e.g. https://rideguard-model.onrender.com
+      # Leave UNSET to run on the transparent mock scorer instead of the real model.
+      - key: MODEL_SERVICE_URL
+        sync: false
+
+  - type: web
+    name: rideguard-model
+    runtime: python
+    plan: free
+    rootDir: apps/model
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn service:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"

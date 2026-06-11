@@ -1,0 +1,158 @@
+{
+  "labels": [
+    "No Accident",
+    "Moderate Accident",
+    "Severe Accident"
+  ],
+  "risk_weights": {
+    "No Accident": 0.0,
+    "Moderate Accident": 0.5,
+    "Severe Accident": 1.0
+  },
+  "cat_cols": [
+    "Biker_Occupation",
+    "Biker_Education_Level",
+    "Talk_While_Riding",
+    "Smoke_While_Riding",
+    "Wearing_Helmet",
+    "Motorcycle_Ownership",
+    "Valid_Driving_License",
+    "Bike_Condition",
+    "Road_Type",
+    "Road_condition",
+    "Weather",
+    "Time_of_Day"
+  ],
+  "numeric_cols": [
+    "Biker_Age",
+    "Riding_Experience",
+    "Daily_Travel_Distance",
+    "Traffic_Density",
+    "Speed_Limit",
+    "Bike_Speed",
+    "Biker_Alcohol"
+  ],
+  "feature_order": [
+    "Biker_Age",
+    "Biker_Occupation",
+    "Biker_Education_Level",
+    "Riding_Experience",
+    "Daily_Travel_Distance",
+    "Talk_While_Riding",
+    "Smoke_While_Riding",
+    "Wearing_Helmet",
+    "Motorcycle_Ownership",
+    "Valid_Driving_License",
+    "Bike_Condition",
+    "Road_Type",
+    "Road_condition",
+    "Weather",
+    "Time_of_Day",
+    "Traffic_Density",
+    "Speed_Limit",
+    "Bike_Speed",
+    "Biker_Alcohol"
+  ],
+  "alpha": 0.1,
+  "qhat": 0.08605427759253836,
+  "metrics": {
+    "test_accuracy": 0.9715,
+    "test_macro_f1": 0.9718,
+    "ece_uncalibrated": 0.0429,
+    "ece_calibrated": 0.0076,
+    "conformal_coverage": 0.895,
+    "conformal_avg_set_size": 1.0,
+    "conformal_target": 0.9
+  },
+  "domains": {
+    "Biker_Occupation": [
+      "Business",
+      "Others",
+      "Service",
+      "Student"
+    ],
+    "Biker_Education_Level": [
+      "Above high school",
+      "High school",
+      "Less than high school"
+    ],
+    "Talk_While_Riding": [
+      "Never",
+      "Regularly",
+      "Sometimes"
+    ],
+    "Smoke_While_Riding": [
+      "Never",
+      "Regularly",
+      "Sometimes"
+    ],
+    "Wearing_Helmet": [
+      "No",
+      "Yes"
+    ],
+    "Motorcycle_Ownership": [
+      "Bought with own money",
+      "Inherited"
+    ],
+    "Valid_Driving_License": [
+      "No",
+      "Yes"
+    ],
+    "Bike_Condition": [
+      "New",
+      "Old"
+    ],
+    "Road_Type": [
+      "City Road",
+      "Highway",
+      "Village Road"
+    ],
+    "Road_condition": [
+      "Dry",
+      "Wet"
+    ],
+    "Weather": [
+      "Clear",
+      "Foggy",
+      "Rainy"
+    ],
+    "Time_of_Day": [
+      "Afternoon",
+      "Evening",
+      "Morning",
+      "Night",
+      "Noon"
+    ]
+  },
+  "numeric_ranges": {
+    "Biker_Age": [
+      15.0,
+      70.0
+    ],
+    "Riding_Experience": [
+      0.0,
+      30.0
+    ],
+    "Daily_Travel_Distance": [
+      0.0,
+      150.0
+    ],
+    "Traffic_Density": [
+      1.0,
+      8.0
+    ],
+    "Speed_Limit": [
+      40.0,
+      80.0
+    ],
+    "Bike_Speed": [
+      20.0,
+      120.0
+    ],
+    "Biker_Alcohol": [
+      0.0,
+      1.0
+    ]
+  },
+  "model_version": "rideguard-tier1-2026-06"
+}

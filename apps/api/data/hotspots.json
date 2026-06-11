@@ -1,0 +1,1526 @@
+{
+  "city": "Dhaka",
+  "source": "pipeline",
+  "method": "DBSCAN(eps=250m,min_samples=20) + severity-weighted KDE",
+  "clusters": 253,
+  "hotspots": [
+    {
+      "lat": 23.852863,
+      "lon": 90.40682,
+      "count": 2573,
+      "normDensity": 1.0
+    },
+    {
+      "lat": 23.730831,
+      "lon": 90.413659,
+      "count": 2488,
+      "normDensity": 0.9504
+    },
+    {
+      "lat": 23.753606,
+      "lon": 90.392866,
+      "count": 2435,
+      "normDensity": 0.931
+    },
+    {
+      "lat": 23.71397,
+      "lon": 90.426607,
+      "count": 1158,
+      "normDensity": 0.4723
+    },
+    {
+      "lat": 23.793282,
+      "lon": 90.4049,
+      "count": 996,
+      "normDensity": 0.3653
+    },
+    {
+      "lat": 23.804107,
+      "lon": 90.415251,
+      "count": 908,
+      "normDensity": 0.3623
+    },
+    {
+      "lat": 23.699677,
+      "lon": 90.456877,
+      "count": 798,
+      "normDensity": 0.3238
+    },
+    {
+      "lat": 23.823338,
+      "lon": 90.421392,
+      "count": 847,
+      "normDensity": 0.3212
+    },
+    {
+      "lat": 23.806763,
+      "lon": 90.366959,
+      "count": 768,
+      "normDensity": 0.3191
+    },
+    {
+      "lat": 23.831434,
+      "lon": 90.414844,
+      "count": 719,
+      "normDensity": 0.2899
+    },
+    {
+      "lat": 23.759011,
+      "lon": 90.378142,
+      "count": 727,
+      "normDensity": 0.2742
+    },
+    {
+      "lat": 23.783184,
+      "lon": 90.342052,
+      "count": 703,
+      "normDensity": 0.2682
+    },
+    {
+      "lat": 23.869765,
+      "lon": 90.400413,
+      "count": 630,
+      "normDensity": 0.2621
+    },
+    {
+      "lat": 23.799849,
+      "lon": 90.371571,
+      "count": 574,
+      "normDensity": 0.2328
+    },
+    {
+      "lat": 23.77209,
+      "lon": 90.368025,
+      "count": 561,
+      "normDensity": 0.2232
+    },
+    {
+      "lat": 23.778935,
+      "lon": 90.398346,
+      "count": 560,
+      "normDensity": 0.2208
+    },
+    {
+      "lat": 23.74227,
+      "lon": 90.382523,
+      "count": 415,
+      "normDensity": 0.16
+    },
+    {
+      "lat": 23.79165,
+      "lon": 90.360808,
+      "count": 433,
+      "normDensity": 0.1553
+    },
+    {
+      "lat": 23.756143,
+      "lon": 90.416481,
+      "count": 379,
+      "normDensity": 0.1429
+    },
+    {
+      "lat": 23.784278,
+      "lon": 90.416759,
+      "count": 327,
+      "normDensity": 0.1416
+    },
+    {
+      "lat": 23.773368,
+      "lon": 90.38995,
+      "count": 369,
+      "normDensity": 0.1367
+    },
+    {
+      "lat": 23.745909,
+      "lon": 90.425026,
+      "count": 366,
+      "normDensity": 0.1309
+    },
+    {
+      "lat": 23.742753,
+      "lon": 90.390557,
+      "count": 342,
+      "normDensity": 0.1218
+    },
+    {
+      "lat": 23.758491,
+      "lon": 90.364462,
+      "count": 314,
+      "normDensity": 0.1198
+    },
+    {
+      "lat": 23.744916,
+      "lon": 90.411351,
+      "count": 319,
+      "normDensity": 0.1187
+    },
+    {
+      "lat": 23.749689,
+      "lon": 90.41539,
+      "count": 306,
+      "normDensity": 0.1175
+    },
+    {
+      "lat": 23.764583,
+      "lon": 90.38761,
+      "count": 328,
+      "normDensity": 0.1148
+    },
+    {
+      "lat": 23.879616,
+      "lon": 90.401144,
+      "count": 309,
+      "normDensity": 0.1126
+    },
+    {
+      "lat": 23.815141,
+      "lon": 90.421759,
+      "count": 291,
+      "normDensity": 0.1111
+    },
+    {
+      "lat": 23.86078,
+      "lon": 90.400097,
+      "count": 276,
+      "normDensity": 0.1105
+    },
+    {
+      "lat": 23.781687,
+      "lon": 90.351832,
+      "count": 265,
+      "normDensity": 0.1024
+    },
+    {
+      "lat": 23.810009,
+      "lon": 90.421304,
+      "count": 239,
+      "normDensity": 0.101
+    },
+    {
+      "lat": 23.741153,
+      "lon": 90.395891,
+      "count": 268,
+      "normDensity": 0.1007
+    },
+    {
+      "lat": 23.767693,
+      "lon": 90.39218,
+      "count": 271,
+      "normDensity": 0.0987
+    },
+    {
+      "lat": 23.790677,
+      "lon": 90.375822,
+      "count": 262,
+      "normDensity": 0.0974
+    },
+    {
+      "lat": 23.824816,
+      "lon": 90.343769,
+      "count": 247,
+      "normDensity": 0.0957
+    },
+    {
+      "lat": 23.718977,
+      "lon": 90.409214,
+      "count": 268,
+      "normDensity": 0.0943
+    },
+    {
+      "lat": 23.777757,
+      "lon": 90.405741,
+      "count": 238,
+      "normDensity": 0.0853
+    },
+    {
+      "lat": 23.790092,
+      "lon": 90.35375,
+      "count": 228,
+      "normDensity": 0.0845
+    },
+    {
+      "lat": 23.696962,
+      "lon": 90.506546,
+      "count": 196,
+      "normDensity": 0.0792
+    },
+    {
+      "lat": 23.780792,
+      "lon": 90.369301,
+      "count": 200,
+      "normDensity": 0.0789
+    },
+    {
+      "lat": 23.725893,
+      "lon": 90.498042,
+      "count": 207,
+      "normDensity": 0.0776
+    },
+    {
+      "lat": 23.691262,
+      "lon": 90.480914,
+      "count": 220,
+      "normDensity": 0.0774
+    },
+    {
+      "lat": 23.762978,
+      "lon": 90.421216,
+      "count": 232,
+      "normDensity": 0.0754
+    },
+    {
+      "lat": 23.900371,
+      "lon": 90.327225,
+      "count": 190,
+      "normDensity": 0.0738
+    },
+    {
+      "lat": 23.816324,
+      "lon": 90.410574,
+      "count": 211,
+      "normDensity": 0.0737
+    },
+    {
+      "lat": 23.779195,
+      "lon": 90.373658,
+      "count": 223,
+      "normDensity": 0.0722
+    },
+    {
+      "lat": 23.897761,
+      "lon": 90.330713,
+      "count": 189,
+      "normDensity": 0.0718
+    },
+    {
+      "lat": 23.843434,
+      "lon": 90.402925,
+      "count": 228,
+      "normDensity": 0.0704
+    },
+    {
+      "lat": 23.77845,
+      "lon": 90.359783,
+      "count": 188,
+      "normDensity": 0.0699
+    },
+    {
+      "lat": 23.892071,
+      "lon": 90.361567,
+      "count": 187,
+      "normDensity": 0.0689
+    },
+    {
+      "lat": 23.747407,
+      "lon": 90.371926,
+      "count": 180,
+      "normDensity": 0.0682
+    },
+    {
+      "lat": 23.766687,
+      "lon": 90.37814,
+      "count": 174,
+      "normDensity": 0.0664
+    },
+    {
+      "lat": 23.84724,
+      "lon": 90.40941,
+      "count": 181,
+      "normDensity": 0.0656
+    },
+    {
+      "lat": 23.800759,
+      "lon": 90.426157,
+      "count": 175,
+      "normDensity": 0.0654
+    },
+    {
+      "lat": 23.751757,
+      "lon": 90.377999,
+      "count": 175,
+      "normDensity": 0.0642
+    },
+    {
+      "lat": 23.72948,
+      "lon": 90.385594,
+      "count": 183,
+      "normDensity": 0.063
+    },
+    {
+      "lat": 23.791017,
+      "lon": 90.424868,
+      "count": 196,
+      "normDensity": 0.0629
+    },
+    {
+      "lat": 23.80346,
+      "lon": 90.374686,
+      "count": 191,
+      "normDensity": 0.0628
+    },
+    {
+      "lat": 23.778918,
+      "lon": 90.378615,
+      "count": 152,
+      "normDensity": 0.0516
+    },
+    {
+      "lat": 23.794643,
+      "lon": 90.414423,
+      "count": 153,
+      "normDensity": 0.0495
+    },
+    {
+      "lat": 23.894805,
+      "lon": 90.386042,
+      "count": 118,
+      "normDensity": 0.0486
+    },
+    {
+      "lat": 23.710042,
+      "lon": 90.434623,
+      "count": 124,
+      "normDensity": 0.047
+    },
+    {
+      "lat": 23.742262,
+      "lon": 90.405811,
+      "count": 117,
+      "normDensity": 0.047
+    },
+    {
+      "lat": 23.714546,
+      "lon": 90.409024,
+      "count": 110,
+      "normDensity": 0.0465
+    },
+    {
+      "lat": 23.87361,
+      "lon": 90.38553,
+      "count": 131,
+      "normDensity": 0.0464
+    },
+    {
+      "lat": 23.767498,
+      "lon": 90.400709,
+      "count": 112,
+      "normDensity": 0.0451
+    },
+    {
+      "lat": 23.702551,
+      "lon": 90.42591,
+      "count": 114,
+      "normDensity": 0.0445
+    },
+    {
+      "lat": 23.739859,
+      "lon": 90.401559,
+      "count": 118,
+      "normDensity": 0.0442
+    },
+    {
+      "lat": 23.777745,
+      "lon": 90.425621,
+      "count": 125,
+      "normDensity": 0.044
+    },
+    {
+      "lat": 23.688272,
+      "lon": 90.443162,
+      "count": 108,
+      "normDensity": 0.0439
+    },
+    {
+      "lat": 23.820723,
+      "lon": 90.423121,
+      "count": 126,
+      "normDensity": 0.0436
+    },
+    {
+      "lat": 23.748558,
+      "lon": 90.406479,
+      "count": 128,
+      "normDensity": 0.0432
+    },
+    {
+      "lat": 23.750856,
+      "lon": 90.385994,
+      "count": 131,
+      "normDensity": 0.0426
+    },
+    {
+      "lat": 23.71645,
+      "lon": 90.4646,
+      "count": 115,
+      "normDensity": 0.0417
+    },
+    {
+      "lat": 23.728633,
+      "lon": 90.399944,
+      "count": 113,
+      "normDensity": 0.0401
+    },
+    {
+      "lat": 23.86241,
+      "lon": 90.404219,
+      "count": 118,
+      "normDensity": 0.0384
+    },
+    {
+      "lat": 23.709629,
+      "lon": 90.41193,
+      "count": 108,
+      "normDensity": 0.0363
+    },
+    {
+      "lat": 23.699329,
+      "lon": 90.435768,
+      "count": 89,
+      "normDensity": 0.0354
+    },
+    {
+      "lat": 23.750813,
+      "lon": 90.364398,
+      "count": 102,
+      "normDensity": 0.035
+    },
+    {
+      "lat": 23.732939,
+      "lon": 90.426527,
+      "count": 120,
+      "normDensity": 0.0338
+    },
+    {
+      "lat": 23.820761,
+      "lon": 90.419873,
+      "count": 99,
+      "normDensity": 0.0334
+    },
+    {
+      "lat": 23.714677,
+      "lon": 90.493188,
+      "count": 95,
+      "normDensity": 0.0331
+    },
+    {
+      "lat": 23.810894,
+      "lon": 90.401439,
+      "count": 92,
+      "normDensity": 0.0331
+    },
+    {
+      "lat": 23.836429,
+      "lon": 90.373341,
+      "count": 100,
+      "normDensity": 0.0326
+    },
+    {
+      "lat": 23.803116,
+      "lon": 90.403399,
+      "count": 93,
+      "normDensity": 0.0326
+    },
+    {
+      "lat": 23.815383,
+      "lon": 90.364403,
+      "count": 75,
+      "normDensity": 0.0318
+    },
+    {
+      "lat": 23.791394,
+      "lon": 90.398235,
+      "count": 78,
+      "normDensity": 0.0318
+    },
+    {
+      "lat": 23.845873,
+      "lon": 90.412583,
+      "count": 85,
+      "normDensity": 0.0314
+    },
+    {
+      "lat": 23.797588,
+      "lon": 90.3543,
+      "count": 89,
+      "normDensity": 0.0301
+    },
+    {
+      "lat": 23.833057,
+      "lon": 90.391598,
+      "count": 74,
+      "normDensity": 0.03
+    },
+    {
+      "lat": 23.765607,
+      "lon": 90.414386,
+      "count": 83,
+      "normDensity": 0.03
+    },
+    {
+      "lat": 23.654854,
+      "lon": 90.511495,
+      "count": 79,
+      "normDensity": 0.0298
+    },
+    {
+      "lat": 23.765586,
+      "lon": 90.43828,
+      "count": 87,
+      "normDensity": 0.0296
+    },
+    {
+      "lat": 23.832737,
+      "lon": 90.418491,
+      "count": 92,
+      "normDensity": 0.0294
+    },
+    {
+      "lat": 23.711499,
+      "lon": 90.40178,
+      "count": 89,
+      "normDensity": 0.029
+    },
+    {
+      "lat": 23.787304,
+      "lon": 90.402505,
+      "count": 76,
+      "normDensity": 0.0286
+    },
+    {
+      "lat": 23.824366,
+      "lon": 90.361992,
+      "count": 89,
+      "normDensity": 0.0282
+    },
+    {
+      "lat": 23.68862,
+      "lon": 90.428394,
+      "count": 82,
+      "normDensity": 0.0279
+    },
+    {
+      "lat": 23.706868,
+      "lon": 90.444022,
+      "count": 70,
+      "normDensity": 0.0277
+    },
+    {
+      "lat": 23.859123,
+      "lon": 90.424165,
+      "count": 74,
+      "normDensity": 0.0275
+    },
+    {
+      "lat": 23.869902,
+      "lon": 90.390632,
+      "count": 72,
+      "normDensity": 0.0272
+    },
+    {
+      "lat": 23.714687,
+      "lon": 90.457199,
+      "count": 88,
+      "normDensity": 0.0269
+    },
+    {
+      "lat": 23.777776,
+      "lon": 90.344245,
+      "count": 83,
+      "normDensity": 0.0267
+    },
+    {
+      "lat": 23.764263,
+      "lon": 90.446506,
+      "count": 78,
+      "normDensity": 0.026
+    },
+    {
+      "lat": 23.87516,
+      "lon": 90.369033,
+      "count": 70,
+      "normDensity": 0.0259
+    },
+    {
+      "lat": 23.744491,
+      "lon": 90.359985,
+      "count": 92,
+      "normDensity": 0.0256
+    },
+    {
+      "lat": 23.874702,
+      "lon": 90.410442,
+      "count": 71,
+      "normDensity": 0.0254
+    },
+    {
+      "lat": 23.800781,
+      "lon": 90.381432,
+      "count": 66,
+      "normDensity": 0.0249
+    },
+    {
+      "lat": 23.764538,
+      "lon": 90.376939,
+      "count": 65,
+      "normDensity": 0.0246
+    },
+    {
+      "lat": 23.753436,
+      "lon": 90.372509,
+      "count": 73,
+      "normDensity": 0.0234
+    },
+    {
+      "lat": 23.785306,
+      "lon": 90.359752,
+      "count": 67,
+      "normDensity": 0.0224
+    },
+    {
+      "lat": 23.787909,
+      "lon": 90.399966,
+      "count": 54,
+      "normDensity": 0.0222
+    },
+    {
+      "lat": 23.742323,
+      "lon": 90.399964,
+      "count": 59,
+      "normDensity": 0.0222
+    },
+    {
+      "lat": 23.713525,
+      "lon": 90.421736,
+      "count": 71,
+      "normDensity": 0.0217
+    },
+    {
+      "lat": 23.693145,
+      "lon": 90.434043,
+      "count": 68,
+      "normDensity": 0.0215
+    },
+    {
+      "lat": 23.811772,
+      "lon": 90.392776,
+      "count": 77,
+      "normDensity": 0.0215
+    },
+    {
+      "lat": 23.737588,
+      "lon": 90.40129,
+      "count": 66,
+      "normDensity": 0.0211
+    },
+    {
+      "lat": 23.756107,
+      "lon": 90.387196,
+      "count": 61,
+      "normDensity": 0.021
+    },
+    {
+      "lat": 23.858045,
+      "lon": 90.401599,
+      "count": 60,
+      "normDensity": 0.0208
+    },
+    {
+      "lat": 23.705434,
+      "lon": 90.431526,
+      "count": 67,
+      "normDensity": 0.0197
+    },
+    {
+      "lat": 23.753305,
+      "lon": 90.354796,
+      "count": 72,
+      "normDensity": 0.0196
+    },
+    {
+      "lat": 23.78812,
+      "lon": 90.373658,
+      "count": 59,
+      "normDensity": 0.0192
+    },
+    {
+      "lat": 23.769653,
+      "lon": 90.358706,
+      "count": 58,
+      "normDensity": 0.0191
+    },
+    {
+      "lat": 23.795299,
+      "lon": 90.349353,
+      "count": 65,
+      "normDensity": 0.0189
+    },
+    {
+      "lat": 23.803769,
+      "lon": 90.388632,
+      "count": 69,
+      "normDensity": 0.0188
+    },
+    {
+      "lat": 23.765461,
+      "lon": 90.36883,
+      "count": 55,
+      "normDensity": 0.0185
+    },
+    {
+      "lat": 23.810608,
+      "lon": 90.36706,
+      "count": 51,
+      "normDensity": 0.0184
+    },
+    {
+      "lat": 23.702657,
+      "lon": 90.44155,
+      "count": 52,
+      "normDensity": 0.0181
+    },
+    {
+      "lat": 23.706135,
+      "lon": 90.424978,
+      "count": 45,
+      "normDensity": 0.0178
+    },
+    {
+      "lat": 23.545355,
+      "lon": 90.471469,
+      "count": 57,
+      "normDensity": 0.0177
+    },
+    {
+      "lat": 23.783515,
+      "lon": 90.378262,
+      "count": 67,
+      "normDensity": 0.0177
+    },
+    {
+      "lat": 23.829013,
+      "lon": 90.419582,
+      "count": 40,
+      "normDensity": 0.017
+    },
+    {
+      "lat": 23.826087,
+      "lon": 90.356596,
+      "count": 42,
+      "normDensity": 0.0167
+    },
+    {
+      "lat": 23.831029,
+      "lon": 90.450515,
+      "count": 55,
+      "normDensity": 0.0166
+    },
+    {
+      "lat": 23.772615,
+      "lon": 90.353931,
+      "count": 38,
+      "normDensity": 0.0165
+    },
+    {
+      "lat": 23.771308,
+      "lon": 90.363558,
+      "count": 55,
+      "normDensity": 0.016
+    },
+    {
+      "lat": 23.728657,
+      "lon": 90.403646,
+      "count": 62,
+      "normDensity": 0.0155
+    },
+    {
+      "lat": 23.812561,
+      "lon": 90.413107,
+      "count": 61,
+      "normDensity": 0.0154
+    },
+    {
+      "lat": 23.85455,
+      "lon": 90.228813,
+      "count": 33,
+      "normDensity": 0.015
+    },
+    {
+      "lat": 23.77313,
+      "lon": 90.42574,
+      "count": 65,
+      "normDensity": 0.015
+    },
+    {
+      "lat": 23.718215,
+      "lon": 90.390104,
+      "count": 38,
+      "normDensity": 0.0148
+    },
+    {
+      "lat": 23.7785,
+      "lon": 90.353067,
+      "count": 50,
+      "normDensity": 0.0148
+    },
+    {
+      "lat": 23.741785,
+      "lon": 90.457313,
+      "count": 50,
+      "normDensity": 0.0148
+    },
+    {
+      "lat": 23.826425,
+      "lon": 90.3926,
+      "count": 51,
+      "normDensity": 0.0139
+    },
+    {
+      "lat": 23.740876,
+      "lon": 90.370608,
+      "count": 54,
+      "normDensity": 0.0137
+    },
+    {
+      "lat": 23.807698,
+      "lon": 90.385259,
+      "count": 47,
+      "normDensity": 0.0136
+    },
+    {
+      "lat": 23.866082,
+      "lon": 90.384567,
+      "count": 61,
+      "normDensity": 0.0136
+    },
+    {
+      "lat": 23.723232,
+      "lon": 90.375007,
+      "count": 59,
+      "normDensity": 0.0135
+    },
+    {
+      "lat": 23.881232,
+      "lon": 90.389645,
+      "count": 42,
+      "normDensity": 0.0135
+    },
+    {
+      "lat": 23.722923,
+      "lon": 90.432432,
+      "count": 38,
+      "normDensity": 0.0134
+    },
+    {
+      "lat": 23.822047,
+      "lon": 90.365726,
+      "count": 38,
+      "normDensity": 0.0133
+    },
+    {
+      "lat": 23.767952,
+      "lon": 90.423115,
+      "count": 47,
+      "normDensity": 0.0132
+    },
+    {
+      "lat": 23.825345,
+      "lon": 90.372568,
+      "count": 42,
+      "normDensity": 0.0127
+    },
+    {
+      "lat": 23.712521,
+      "lon": 90.415588,
+      "count": 34,
+      "normDensity": 0.0125
+    },
+    {
+      "lat": 23.88923,
+      "lon": 90.383075,
+      "count": 48,
+      "normDensity": 0.0125
+    },
+    {
+      "lat": 23.701464,
+      "lon": 90.428813,
+      "count": 45,
+      "normDensity": 0.0124
+    },
+    {
+      "lat": 23.728654,
+      "lon": 90.394302,
+      "count": 41,
+      "normDensity": 0.012
+    },
+    {
+      "lat": 23.819054,
+      "lon": 90.364947,
+      "count": 46,
+      "normDensity": 0.012
+    },
+    {
+      "lat": 23.822891,
+      "lon": 90.442572,
+      "count": 37,
+      "normDensity": 0.0119
+    },
+    {
+      "lat": 23.783648,
+      "lon": 90.37175,
+      "count": 33,
+      "normDensity": 0.0119
+    },
+    {
+      "lat": 23.751767,
+      "lon": 90.422491,
+      "count": 26,
+      "normDensity": 0.0115
+    },
+    {
+      "lat": 23.776768,
+      "lon": 90.417379,
+      "count": 42,
+      "normDensity": 0.0114
+    },
+    {
+      "lat": 23.751365,
+      "lon": 90.402077,
+      "count": 47,
+      "normDensity": 0.0114
+    },
+    {
+      "lat": 23.766133,
+      "lon": 90.35883,
+      "count": 32,
+      "normDensity": 0.0113
+    },
+    {
+      "lat": 23.880201,
+      "lon": 90.410363,
+      "count": 33,
+      "normDensity": 0.0113
+    },
+    {
+      "lat": 23.714008,
+      "lon": 90.470195,
+      "count": 40,
+      "normDensity": 0.0111
+    },
+    {
+      "lat": 23.790405,
+      "lon": 90.420962,
+      "count": 40,
+      "normDensity": 0.011
+    },
+    {
+      "lat": 23.782841,
+      "lon": 90.347082,
+      "count": 31,
+      "normDensity": 0.0106
+    },
+    {
+      "lat": 23.749345,
+      "lon": 90.430417,
+      "count": 45,
+      "normDensity": 0.0104
+    },
+    {
+      "lat": 23.692887,
+      "lon": 90.44331,
+      "count": 40,
+      "normDensity": 0.0103
+    },
+    {
+      "lat": 23.827652,
+      "lon": 90.400886,
+      "count": 39,
+      "normDensity": 0.0102
+    },
+    {
+      "lat": 23.821256,
+      "lon": 90.371396,
+      "count": 41,
+      "normDensity": 0.0099
+    },
+    {
+      "lat": 23.77835,
+      "lon": 90.370735,
+      "count": 28,
+      "normDensity": 0.0099
+    },
+    {
+      "lat": 23.769454,
+      "lon": 90.404818,
+      "count": 34,
+      "normDensity": 0.0098
+    },
+    {
+      "lat": 23.780406,
+      "lon": 90.407102,
+      "count": 37,
+      "normDensity": 0.0098
+    },
+    {
+      "lat": 23.822921,
+      "lon": 90.397426,
+      "count": 31,
+      "normDensity": 0.0095
+    },
+    {
+      "lat": 23.742604,
+      "lon": 90.430784,
+      "count": 29,
+      "normDensity": 0.0094
+    },
+    {
+      "lat": 23.760314,
+      "lon": 90.399064,
+      "count": 32,
+      "normDensity": 0.0094
+    },
+    {
+      "lat": 23.799088,
+      "lon": 90.387934,
+      "count": 33,
+      "normDensity": 0.0094
+    },
+    {
+      "lat": 23.770549,
+      "lon": 90.396325,
+      "count": 40,
+      "normDensity": 0.0092
+    },
+    {
+      "lat": 23.701015,
+      "lon": 90.453576,
+      "count": 36,
+      "normDensity": 0.0092
+    },
+    {
+      "lat": 23.765225,
+      "lon": 90.354351,
+      "count": 33,
+      "normDensity": 0.0092
+    },
+    {
+      "lat": 23.676827,
+      "lon": 90.444666,
+      "count": 34,
+      "normDensity": 0.009
+    },
+    {
+      "lat": 23.819145,
+      "lon": 90.452609,
+      "count": 39,
+      "normDensity": 0.009
+    },
+    {
+      "lat": 23.692851,
+      "lon": 90.42979,
+      "count": 45,
+      "normDensity": 0.009
+    },
+    {
+      "lat": 23.793629,
+      "lon": 90.410681,
+      "count": 24,
+      "normDensity": 0.009
+    },
+    {
+      "lat": 23.836902,
+      "lon": 90.430013,
+      "count": 29,
+      "normDensity": 0.009
+    },
+    {
+      "lat": 23.866691,
+      "lon": 90.391261,
+      "count": 29,
+      "normDensity": 0.009
+    },
+    {
+      "lat": 23.742756,
+      "lon": 90.387723,
+      "count": 32,
+      "normDensity": 0.0089
+    },
+    {
+      "lat": 23.805611,
+      "lon": 90.351015,
+      "count": 28,
+      "normDensity": 0.0088
+    },
+    {
+      "lat": 23.869398,
+      "lon": 90.397276,
+      "count": 29,
+      "normDensity": 0.0088
+    },
+    {
+      "lat": 23.799286,
+      "lon": 90.253313,
+      "count": 43,
+      "normDensity": 0.0087
+    },
+    {
+      "lat": 23.812072,
+      "lon": 90.370847,
+      "count": 28,
+      "normDensity": 0.0087
+    },
+    {
+      "lat": 23.739082,
+      "lon": 90.375527,
+      "count": 27,
+      "normDensity": 0.0085
+    },
+    {
+      "lat": 23.766394,
+      "lon": 90.43432,
+      "count": 29,
+      "normDensity": 0.0085
+    },
+    {
+      "lat": 23.867135,
+      "lon": 90.406448,
+      "count": 41,
+      "normDensity": 0.0084
+    },
+    {
+      "lat": 23.818204,
+      "lon": 90.407868,
+      "count": 24,
+      "normDensity": 0.0083
+    },
+    {
+      "lat": 23.754966,
+      "lon": 90.366575,
+      "count": 32,
+      "normDensity": 0.0083
+    },
+    {
+      "lat": 23.724744,
+      "lon": 90.43432,
+      "count": 42,
+      "normDensity": 0.0082
+    },
+    {
+      "lat": 23.652242,
+      "lon": 90.350623,
+      "count": 30,
+      "normDensity": 0.0077
+    },
+    {
+      "lat": 23.73861,
+      "lon": 90.455144,
+      "count": 38,
+      "normDensity": 0.0077
+    },
+    {
+      "lat": 23.780701,
+      "lon": 90.421134,
+      "count": 34,
+      "normDensity": 0.0077
+    },
+    {
+      "lat": 23.695889,
+      "lon": 90.45096,
+      "count": 40,
+      "normDensity": 0.0075
+    },
+    {
+      "lat": 23.782204,
+      "lon": 90.359537,
+      "count": 26,
+      "normDensity": 0.0074
+    },
+    {
+      "lat": 23.817753,
+      "lon": 90.418409,
+      "count": 28,
+      "normDensity": 0.0073
+    },
+    {
+      "lat": 23.737086,
+      "lon": 90.369341,
+      "count": 30,
+      "normDensity": 0.0073
+    },
+    {
+      "lat": 23.785054,
+      "lon": 90.374383,
+      "count": 36,
+      "normDensity": 0.0073
+    },
+    {
+      "lat": 23.836578,
+      "lon": 90.42339,
+      "count": 26,
+      "normDensity": 0.0073
+    },
+    {
+      "lat": 23.784841,
+      "lon": 90.399528,
+      "count": 23,
+      "normDensity": 0.0068
+    },
+    {
+      "lat": 23.897447,
+      "lon": 90.399087,
+      "count": 41,
+      "normDensity": 0.0067
+    },
+    {
+      "lat": 23.761305,
+      "lon": 90.378524,
+      "count": 31,
+      "normDensity": 0.0067
+    },
+    {
+      "lat": 23.76276,
+      "lon": 90.351985,
+      "count": 38,
+      "normDensity": 0.0064
+    },
+    {
+      "lat": 23.912256,
+      "lon": 90.396213,
+      "count": 33,
+      "normDensity": 0.0062
+    },
+    {
+      "lat": 23.761783,
+      "lon": 90.357424,
+      "count": 30,
+      "normDensity": 0.0062
+    },
+    {
+      "lat": 23.798546,
+      "lon": 90.367116,
+      "count": 25,
+      "normDensity": 0.0061
+    },
+    {
+      "lat": 23.721759,
+      "lon": 90.437856,
+      "count": 25,
+      "normDensity": 0.0061
+    },
+    {
+      "lat": 23.761322,
+      "lon": 90.408212,
+      "count": 22,
+      "normDensity": 0.0061
+    },
+    {
+      "lat": 23.847901,
+      "lon": 90.257699,
+      "count": 34,
+      "normDensity": 0.006
+    },
+    {
+      "lat": 23.785106,
+      "lon": 90.384984,
+      "count": 39,
+      "normDensity": 0.006
+    },
+    {
+      "lat": 23.893935,
+      "lon": 90.372452,
+      "count": 22,
+      "normDensity": 0.0058
+    },
+    {
+      "lat": 23.727001,
+      "lon": 90.389625,
+      "count": 29,
+      "normDensity": 0.0058
+    },
+    {
+      "lat": 23.796891,
+      "lon": 90.432552,
+      "count": 23,
+      "normDensity": 0.0053
+    },
+    {
+      "lat": 23.727537,
+      "lon": 90.371016,
+      "count": 25,
+      "normDensity": 0.0051
+    },
+    {
+      "lat": 23.729263,
+      "lon": 90.431683,
+      "count": 22,
+      "normDensity": 0.0051
+    },
+    {
+      "lat": 23.807411,
+      "lon": 90.359086,
+      "count": 25,
+      "normDensity": 0.005
+    },
+    {
+      "lat": 23.714387,
+      "lon": 90.398113,
+      "count": 20,
+      "normDensity": 0.0048
+    },
+    {
+      "lat": 23.765049,
+      "lon": 90.425093,
+      "count": 21,
+      "normDensity": 0.0048
+    },
+    {
+      "lat": 23.837158,
+      "lon": 90.391317,
+      "count": 33,
+      "normDensity": 0.0047
+    },
+    {
+      "lat": 23.795635,
+      "lon": 90.426675,
+      "count": 30,
+      "normDensity": 0.0045
+    },
+    {
+      "lat": 23.85531,
+      "lon": 90.411118,
+      "count": 22,
+      "normDensity": 0.0045
+    },
+    {
+      "lat": 23.794029,
+      "lon": 90.39014,
+      "count": 28,
+      "normDensity": 0.0045
+    },
+    {
+      "lat": 23.713748,
+      "lon": 90.405093,
+      "count": 27,
+      "normDensity": 0.0045
+    },
+    {
+      "lat": 23.701775,
+      "lon": 90.443954,
+      "count": 23,
+      "normDensity": 0.0045
+    },
+    {
+      "lat": 23.829352,
+      "lon": 90.390434,
+      "count": 20,
+      "normDensity": 0.0042
+    },
+    {
+      "lat": 23.739651,
+      "lon": 90.427948,
+      "count": 22,
+      "normDensity": 0.004
+    },
+    {
+      "lat": 23.803753,
+      "lon": 90.422588,
+      "count": 23,
+      "normDensity": 0.0039
+    },
+    {
+      "lat": 23.71273,
+      "lon": 90.433547,
+      "count": 21,
+      "normDensity": 0.0039
+    },
+    {
+      "lat": 23.889259,
+      "lon": 90.389285,
+      "count": 23,
+      "normDensity": 0.0036
+    },
+    {
+      "lat": 23.69323,
+      "lon": 90.475525,
+      "count": 20,
+      "normDensity": 0.0035
+    },
+    {
+      "lat": 23.732772,
+      "lon": 90.367898,
+      "count": 23,
+      "normDensity": 0.0035
+    },
+    {
+      "lat": 23.694939,
+      "lon": 90.490128,
+      "count": 26,
+      "normDensity": 0.0035
+    },
+    {
+      "lat": 23.705194,
+      "lon": 90.47574,
+      "count": 20,
+      "normDensity": 0.0033
+    },
+    {
+      "lat": 23.752844,
+      "lon": 90.38156,
+      "count": 22,
+      "normDensity": 0.0033
+    },
+    {
+      "lat": 23.756721,
+      "lon": 90.356198,
+      "count": 21,
+      "normDensity": 0.0032
+    },
+    {
+      "lat": 23.817169,
+      "lon": 90.370154,
+      "count": 20,
+      "normDensity": 0.0029
+    },
+    {
+      "lat": 23.791895,
+      "lon": 90.349522,
+      "count": 31,
+      "normDensity": 0.0029
+    },
+    {
+      "lat": 23.798406,
+      "lon": 90.343401,
+      "count": 25,
+      "normDensity": 0.0029
+    },
+    {
+      "lat": 23.810311,
+      "lon": 90.424721,
+      "count": 26,
+      "normDensity": 0.0029
+    },
+    {
+      "lat": 23.859235,
+      "lon": 90.410723,
+      "count": 20,
+      "normDensity": 0.0023
+    },
+    {
+      "lat": 23.73135,
+      "lon": 90.404522,
+      "count": 23,
+      "normDensity": 0.0018
+    },
+    {
+      "lat": 23.892051,
+      "lon": 90.402236,
+      "count": 22,
+      "normDensity": 0.0012
+    },
+    {
+      "lat": 23.763923,
+      "lon": 90.383566,
+      "count": 20,
+      "normDensity": 0.0
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+
+html, body { height: 100%; }
+body {
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgba(37,99,235,0.07), transparent 60%),
+    #F4F7FB;
+  color: #0F172A;
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Friendly, visible focus ring */
+*:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Light map tiles, gentle treatment */
+.leaflet-container { background: #E8EEF5; font-family: var(--font-body); }
+.leaflet-tile { filter: saturate(0.92) brightness(1.02); }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

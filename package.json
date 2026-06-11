@@ -1,0 +1,25 @@
+{
+  "name": "rideguard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RideGuard rider risk-advisory web application (Next.js + NestJS).",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @rideguard/shared",
+    "dev:api": "npm run start:dev --workspace @rideguard/api",
+    "dev:web": "npm run dev --workspace @rideguard/web",
+    "dev:model": "cd apps/model && (python3 -m uvicorn service:app --port 8000 || uvicorn service:app --port 8000)",
+    "dev": "npm run build:shared && concurrently -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev:web\"",
+    "build": "npm run build:shared && npm run build --workspace @rideguard/api && npm run build --workspace @rideguard/web",
+    "lint": "echo \"add eslint per app as needed\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}

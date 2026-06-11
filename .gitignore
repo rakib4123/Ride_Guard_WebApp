@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+out/
+build/
+coverage/
+*.log
+.env
+.env.local
+apps/api/data/trips.json
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+apps/model/.venv/
+apps/model/catboost_info/
