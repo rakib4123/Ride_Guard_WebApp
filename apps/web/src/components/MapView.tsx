@@ -78,17 +78,18 @@ export function HotspotMap({ hotspots }: { hotspots: Hotspot[] }) {
  * heat layer underneath.
  */
 export function PointPickerMap({
-  value, onChange, level, hotspots = [],
+  value, onChange, level, hotspots = [], zoomControl = true,
 }: {
   value: LatLon;
   onChange: (loc: LatLon) => void;
   level?: 'Low' | 'Medium' | 'High';
   hotspots?: Hotspot[];
+  zoomControl?: boolean;
 }) {
   const color = level ? riskColor[level] : '#2563EB';
   const [k] = useState(() => `pt-${Math.random().toString(36).slice(2)}`);
   return (
-    <MapContainer key={k} center={[value.lat, value.lon]} zoom={14} className="h-full w-full" scrollWheelZoom>
+    <MapContainer key={k} center={[value.lat, value.lon]} zoom={14} className="h-full w-full" scrollWheelZoom zoomControl={zoomControl}>
       <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
       <HotspotLayer hotspots={hotspots} />
       <ClickToSet onSet={onChange} />

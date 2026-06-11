@@ -8,8 +8,8 @@ import { PlaceholderBanner } from '@/components/PlaceholderBanner';
 import { AccountBar } from '@/components/AccountBar';
 
 const AUTH_ROUTES = ['/login', '/signup'];
+const FULL_BLEED = ['/now', '/']; // map-first screens manage their own chrome
 
-/** Decides the chrome and gates the app: signed-out users are sent to /login. */
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
@@ -22,18 +22,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (user && isAuthRoute) router.replace('/now');
   }, [user, loading, configured, isAuthRoute, router]);
 
-  // Login / signup: bare centered layout, no nav.
   if (isAuthRoute) {
-    return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">{children}</div>
-    );
+    return <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">{children}</div>;
+  }
+  if (configured && (loading || !user)) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-muted">Loading…</div>;
   }
 
-  // While resolving the session, or if signed out, show a spinner (effect redirects).
-  if (configured && (loading || !user)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted">Loading…</div>
-    );
+  // Full-bleed map screens render edge-to-edge and supply their own nav/header.
+  if (FULL_BLEED.includes(path)) {
+    return <>{children}</>;
   }
 
   return (
