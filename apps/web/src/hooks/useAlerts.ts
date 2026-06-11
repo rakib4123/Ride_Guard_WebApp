@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 export type AlertLevel = 'med' | 'high';
 export interface AlertItem { id: string; message: string; level: AlertLevel; }
@@ -58,5 +58,8 @@ export function useAlerts() {
   }, []);
 
   const dismiss = useCallback(() => setBanner(null), []);
-  return { banner, channels, setChannels, fire, arm, dismiss };
+  return useMemo(
+    () => ({ banner, channels, setChannels, fire, arm, dismiss }),
+    [banner, channels, setChannels, fire, arm, dismiss],
+  );
 }
