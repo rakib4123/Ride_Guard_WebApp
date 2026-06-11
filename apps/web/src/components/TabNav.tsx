@@ -7,6 +7,7 @@ const tabs = [
   { href: '/now', label: 'Now' },
   { href: '/route', label: 'Route' },
   { href: '/map', label: 'Map' },
+  { href: '/history', label: 'Trips' },
   { href: '/about', label: 'About' },
 ];
 
@@ -20,11 +21,9 @@ export function TabNav() {
           return (
             <Link key={t.href} href={t.href}
               className="flex-1 py-3 text-center text-sm font-medium transition-colors"
-              style={{ color: active ? '#FFB454' : '#93A0B4' }}>
+              style={{ color: active ? '#2563EB' : '#64748B' }}>
               {t.label}
-              {active && (
-                <span className="mx-auto mt-1 block h-0.5 w-6 rounded-full bg-signal" />
-              )}
+              {active && <span className="mx-auto mt-1 block h-0.5 w-6 rounded-full bg-signal" />}
             </Link>
           );
         })}

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLon, ScorePointResponse } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { useTripLog } from '@/hooks/useTripLog';
+import { useAuth } from '@/context/AuthContext';
+import { saveTripToAccount } from '@/lib/trips';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useRide } from '@/hooks/useRide';
 import { useAlerts } from '@/hooks/useAlerts';
@@ -42,6 +44,9 @@ export default function NowPage() {
 
   const [consent, setConsent] = useState({ logging: false, raw_gps: false });
   const [savedNote, setSavedNote] = useState<string | null>(null);
+  const [acctNote, setAcctNote] = useState<string | null>(null);
+  const [acctSaving, setAcctSaving] = useState(false);
+  const { user } = useAuth();
   const startTime = useRef(new Date().toISOString());
   const prevLevel = useRef<string>('Low');
   const { save, downloadAll, trips, saving } = useTripLog();
@@ -141,6 +146,18 @@ export default function NowPage() {
     setSavedNote('Saved. Thanks for helping validate the model.');
     setTimeout(() => setSavedNote(null), 3000);
   }, [result, weather, features, loc, consent, save]);
+
+  const saveToAccount = useCallback(async () => {
+    if (!result) return;
+    setAcctSaving(true); setAcctNote(null);
+    try {
+      await saveTripToAccount({ result, loc, features, locName });
+      setAcctNote('Saved to your trips.');
+      setTimeout(() => setAcctNote(null), 3000);
+    } catch (e) {
+      setAcctNote(e instanceof Error ? e.message : 'Could not save.');
+    } finally { setAcctSaving(false); }
+  }, [result, loc, features, locName]);
 
   return (
     <>
@@ -244,6 +261,15 @@ export default function NowPage() {
             Download log ({trips.length})
           </button>
         </div>
+        {user && (
+          <div className="mt-3 border-t border-line pt-3">
+            <button disabled={!result || acctSaving} onClick={saveToAccount}
+              className="rounded-xl border border-signal/40 bg-signal/5 px-4 py-2.5 text-sm font-semibold text-signal disabled:opacity-40">
+              {acctSaving ? 'Saving…' : 'Save to my trips'}
+            </button>
+            {acctNote && <p className="mt-2 text-xs text-muted">{acctNote}</p>}
+          </div>
+        )}
         {savedNote && <p className="mt-2 text-xs text-risk-low">{savedNote}</p>}
       </Card>
     </>
