@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLon, ScorePointResponse } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { useTripLog } from '@/hooks/useTripLog';
@@ -68,15 +68,17 @@ export default function NowPage() {
     return () => { active = false; };
   }, [loc, setContext, setToggles]);
 
-  // Live score.
+  // Live score (debounced so rapid auto-updates coalesce into one request).
+  const scoreInput = useMemo(() => ({ features, loc }), [features, loc]);
+  const debScore = useDebounce(scoreInput, 500);
   useEffect(() => {
     let active = true;
     setError(null);
-    api.scorePoint(features, loc)
+    api.scorePoint(debScore.features, debScore.loc)
       .then((r) => active && setResult(r))
       .catch(() => active && setError('Could not reach the scoring service.'));
     return () => { active = false; };
-  }, [features, loc]);
+  }, [debScore]);
 
   // Reverse-geocode the place name + detect road type (debounced, one call).
   const debouncedLoc = useDebounce(loc, 1200);

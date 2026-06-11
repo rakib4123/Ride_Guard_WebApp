@@ -23,9 +23,9 @@ export class SpatialService implements OnModuleInit {
   private resolveDataFile(): string | null {
     const candidates = [
       process.env.HOTSPOTS_FILE,
-      join(__dirname, '..', '..', 'data', 'hotspots.json'),
-      join(process.cwd(), 'data', 'hotspots.json'),
-      join(process.cwd(), 'apps', 'api', 'data', 'hotspots.json'),
+      join(__dirname, '..', '..', 'data', 'hotspots.json'), // dist/spatial -> apps/api/data
+      join(process.cwd(), 'data', 'hotspots.json'),         // started from apps/api
+      join(process.cwd(), 'apps', 'api', 'data', 'hotspots.json'), // started from repo root
     ].filter(Boolean) as string[];
     return candidates.find((p) => existsSync(p)) ?? null;
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Hotspot, LatLon, ScorePointResponse } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/lib/api';
@@ -32,11 +32,13 @@ export default function MapPage() {
       .catch(() => setError('Could not load hotspots from the API.'));
   }, []);
 
+  const scoreInput = useMemo(() => ({ features, loc }), [features, loc]);
+  const debScore = useDebounce(scoreInput, 500);
   useEffect(() => {
     let active = true;
-    api.scorePoint(features, loc).then((r) => active && setResult(r)).catch(() => {});
+    api.scorePoint(debScore.features, debScore.loc).then((r) => active && setResult(r)).catch(() => {});
     return () => { active = false; };
-  }, [features, loc]);
+  }, [debScore]);
 
   const dLoc = useDebounce(loc, 1200);
   useEffect(() => {

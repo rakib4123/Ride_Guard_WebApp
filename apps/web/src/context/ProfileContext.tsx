@@ -30,6 +30,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     Time_of_Day: 'Morning',
   });
 
+  // Stable setters (identity never changes) so effects that depend on them
+  // don't loop. They use functional updates, so [] deps are safe.
   const setProfile = useCallback(
     (p: Partial<RiderProfile>) => setProfileState((cur) => ({ ...cur, ...p })),
     [],
