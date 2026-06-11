@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Hotspot, LatLon } from '@rideguard/shared';
 import { SPATIAL_KERNEL_SIGMA_M } from '@rideguard/shared';
@@ -18,14 +18,27 @@ export class SpatialService implements OnModuleInit {
   private hotspots: Hotspot[] = [];
   private source = 'unloaded';
 
+  /** Try several locations so it works whether started from apps/api, the repo
+   * root (Render), or the compiled dist folder. */
+  private resolveDataFile(): string | null {
+    const candidates = [
+      process.env.HOTSPOTS_FILE,
+      join(__dirname, '..', '..', 'data', 'hotspots.json'),
+      join(process.cwd(), 'data', 'hotspots.json'),
+      join(process.cwd(), 'apps', 'api', 'data', 'hotspots.json'),
+    ].filter(Boolean) as string[];
+    return candidates.find((p) => existsSync(p)) ?? null;
+  }
+
   onModuleInit(): void {
     try {
-      const path = join(process.cwd(), 'data', 'hotspots.json');
+      const path = this.resolveDataFile();
+      if (!path) throw new Error('hotspots.json not found in any known location');
       const raw = JSON.parse(readFileSync(path, 'utf-8'));
       this.hotspots = raw.hotspots ?? [];
       this.source = raw.source ?? 'unknown';
       this.logger.log(
-        `Loaded ${this.hotspots.length} hotspots (source: ${this.source}).`,
+        `Loaded ${this.hotspots.length} hotspots (source: ${this.source}) from ${path}.`,
       );
     } catch (err) {
       this.logger.warn(`Could not load hotspots.json: ${String(err)}`);
