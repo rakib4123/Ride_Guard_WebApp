@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { TabNav } from '@/components/TabNav';
 import { PlaceholderBanner } from '@/components/PlaceholderBanner';
 import { AccountBar } from '@/components/AccountBar';
+import { Splash } from '@/components/Splash';
 
 const AUTH_ROUTES = ['/login', '/signup'];
 const FULL_BLEED = ['/now', '/', '/map', '/route']; // map-first screens manage their own chrome
@@ -15,6 +16,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading, configured } = useAuth();
   const isAuthRoute = AUTH_ROUTES.includes(path);
+  const [booting, setBooting] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setBooting(false), 1400);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (!configured || loading) return;
@@ -25,8 +31,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
   if (isAuthRoute) {
     return <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">{children}</div>;
   }
-  if (configured && (loading || !user)) {
-    return <div className="flex min-h-screen items-center justify-center text-sm text-muted">Loading…</div>;
+  if (booting || (configured && loading)) {
+    return <Splash />;
+  }
+  if (configured && !user && !isAuthRoute) {
+    return <Splash />; // redirecting to /login
   }
 
   // Full-bleed map screens render edge-to-edge and supply their own nav/header.
