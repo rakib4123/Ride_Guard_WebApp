@@ -7,6 +7,7 @@ import { useProfile } from '@/context/ProfileContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { api } from '@/lib/api';
 import { fetchRoute } from '@/lib/routing';
+import { getFix } from '@/lib/geo';
 import { AdvisoryBadge } from '@/components/AdvisoryBadge';
 import { TopFactors } from '@/components/TopFactors';
 import { LocationSearch } from '@/components/LocationSearch';
@@ -33,6 +34,11 @@ export default function RoutePage() {
 
   const dOrigin = useDebounce(origin, 500);
   const dDest = useDebounce(dest, 500);
+
+  // Start the route from the rider's real location when the screen opens.
+  useEffect(() => {
+    getFix().then((f) => setOrigin({ lat: f.lat, lon: f.lon })).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;

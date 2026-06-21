@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Hotspot, LatLon, ScorePointResponse } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { api } from '@/lib/api';
-import { DHAKA_CENTER } from '@/lib/geo';
+import { DHAKA_CENTER, getFix } from '@/lib/geo';
 import { reverseGeocode, shortLabel } from '@/lib/geocode';
 import { useDebounce } from '@/hooks/useDebounce';
 import { AdvisoryBadge } from '@/components/AdvisoryBadge';
@@ -22,11 +22,16 @@ export default function MapPage() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [source, setSource] = useState('');
   const [loc, setLoc] = useState<LatLon>(DHAKA_CENTER);
-  const [locName, setLocName] = useState('Central Dhaka');
+  const [locName, setLocName] = useState('Locating…');
   const [result, setResult] = useState<ScorePointResponse | null>(null);
 
   useEffect(() => {
     api.hotspots().then((r) => { setHotspots(r.hotspots); setSource(r.source); }).catch(() => {});
+  }, []);
+
+  // Center on the rider's real location when the screen opens.
+  useEffect(() => {
+    getFix().then((f) => setLoc({ lat: f.lat, lon: f.lon })).catch(() => {});
   }, []);
 
   const scoreInput = useMemo(() => ({ features, loc }), [features, loc]);
