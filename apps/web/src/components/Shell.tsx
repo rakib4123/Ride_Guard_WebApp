@@ -18,7 +18,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isAuthRoute = AUTH_ROUTES.includes(path);
   const [booting, setBooting] = useState(true);
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 1400);
+    const t = setTimeout(() => setBooting(false), 5000);
     return () => clearTimeout(t);
   }, []);
 
@@ -28,11 +28,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (user && isAuthRoute) router.replace('/now');
   }, [user, loading, configured, isAuthRoute, router]);
 
-  if (isAuthRoute) {
-    return <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">{children}</div>;
-  }
   if (booting || (configured && loading)) {
     return <Splash />;
+  }
+
+  if (isAuthRoute) {
+    return <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">{children}</div>;
   }
   if (configured && !user && !isAuthRoute) {
     return <Splash />; // redirecting to /login
