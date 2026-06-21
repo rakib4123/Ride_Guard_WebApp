@@ -39,9 +39,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <Splash />; // redirecting to /login
   }
 
-  // Full-bleed map screens render edge-to-edge and supply their own nav/header.
+  // Full-bleed map screens render edge-to-edge; the nav bar floats on top.
   if (FULL_BLEED.includes(path)) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <TabNav />
+      </>
+    );
   }
 
   return (
@@ -56,7 +61,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <AccountBar />
       </header>
       <PlaceholderBanner />
-      <main className="flex-1 space-y-4 px-4 py-4">{children}</main>
+      <main className="flex-1 space-y-4 px-4 py-4 pb-24">{children}</main>
       <TabNav />
     </div>
   );

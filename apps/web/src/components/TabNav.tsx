@@ -14,7 +14,8 @@ const tabs = [
 export function TabNav({ inline = false }: { inline?: boolean }) {
   const path = usePathname();
   return (
-    <nav className={inline ? '' : 'sticky bottom-0 z-20 border-t border-line bg-panel/95 backdrop-blur'}>
+    <nav className={inline ? '' : 'fixed inset-x-0 bottom-0 z-[1300] border-t border-line bg-panel/95 backdrop-blur'}
+      style={inline ? undefined : { paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="mx-auto flex max-w-2xl">
         {tabs.map((t) => {
           const Icon = t.icon;

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { TabNav } from '@/components/TabNav';
 
 /**
  * Map-first screen scaffold: a full-screen map with floating top controls, an
@@ -37,7 +36,7 @@ export function MapScreen({ map, top, sheet, sheetMore }: {
 
       <div className="absolute inset-x-0 bottom-0 z-[1200]">
         <div className="mx-auto max-w-2xl rounded-t-3xl border-t border-line bg-white px-4 pt-2"
-          style={{ boxShadow: '0 -10px 30px rgba(15,23,42,0.10)', paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+          style={{ boxShadow: '0 -10px 30px rgba(15,23,42,0.10)', paddingBottom: 'calc(3.75rem + env(safe-area-inset-bottom))' }}>
           {sheetMore && (
             <button onClick={() => setExpanded((o) => !o)} aria-label={expanded ? 'Collapse' : 'Expand'} className="mx-auto mb-2 block">
               <span className="mx-auto block h-1 w-10 rounded-full bg-line" />
@@ -47,7 +46,6 @@ export function MapScreen({ map, top, sheet, sheetMore }: {
           {sheetMore && expanded && (
             <div className="mt-3 max-h-[42vh] space-y-4 overflow-y-auto border-t border-line pt-3">{sheetMore}</div>
           )}
-          <div className="-mx-4 mt-2 border-t border-line"><TabNav inline /></div>
         </div>
       </div>
     </div>

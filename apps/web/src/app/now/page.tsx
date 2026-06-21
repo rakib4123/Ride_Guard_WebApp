@@ -20,7 +20,6 @@ import { buildTrip } from '@/lib/buildTrip';
 import { TopFactors } from '@/components/TopFactors';
 import { LocationSearch } from '@/components/LocationSearch';
 import { AlertBanner } from '@/components/AlertBanner';
-import { TabNav } from '@/components/TabNav';
 import { Lamp } from '@/components/Field';
 
 const PointPickerMap = dynamic(
@@ -194,7 +193,7 @@ export default function NowPage() {
       {/* Bottom sheet */}
       <div className="absolute inset-x-0 bottom-0 z-[1200]">
         <div className="mx-auto max-w-2xl rounded-t-3xl border-t border-line bg-white px-4 pt-2"
-          style={{ boxShadow: '0 -10px 30px rgba(15,23,42,0.10)', paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+          style={{ boxShadow: '0 -10px 30px rgba(15,23,42,0.10)', paddingBottom: 'calc(3.75rem + env(safe-area-inset-bottom))' }}>
           <button onClick={() => setExpanded((o) => !o)} aria-label={expanded ? 'Collapse' : 'Expand'}
             className="mx-auto mb-2 block">
             <span className="mx-auto block h-1 w-10 rounded-full bg-line" />
@@ -293,9 +292,6 @@ export default function NowPage() {
             </div>
           )}
 
-          <div className="-mx-4 mt-2 border-t border-line">
-            <TabNav inline />
-          </div>
         </div>
       </div>
     </div>
