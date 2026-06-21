@@ -77,13 +77,25 @@ export function HotspotMap({ hotspots }: { hotspots: Hotspot[] }) {
  * location; the pin is tinted by the live advisory level. Optional hotspot
  * heat layer underneath.
  */
+function RiskRoadsLayer({ roads }: { roads: { points: [number, number][]; color: string }[] }) {
+  return (
+    <>
+      {roads.map((r, i) => (
+        <Polyline key={`rr-${i}`} positions={r.points}
+          pathOptions={{ color: r.color, weight: 5, opacity: 0.75, lineCap: 'round', lineJoin: 'round' }} />
+      ))}
+    </>
+  );
+}
+
 export function PointPickerMap({
-  value, onChange, level, hotspots = [], zoomControl = true,
+  value, onChange, level, hotspots = [], riskRoads = [], zoomControl = true,
 }: {
   value: LatLon;
   onChange: (loc: LatLon) => void;
   level?: 'Low' | 'Medium' | 'High';
   hotspots?: Hotspot[];
+  riskRoads?: { points: [number, number][]; color: string }[];
   zoomControl?: boolean;
 }) {
   const color = level ? riskColor[level] : '#2563EB';
@@ -92,6 +104,7 @@ export function PointPickerMap({
     <MapContainer key={k} center={[value.lat, value.lon]} zoom={14} className="h-full w-full" scrollWheelZoom zoomControl={zoomControl}>
       <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
       <HotspotLayer hotspots={hotspots} />
+      <RiskRoadsLayer roads={riskRoads} />
       <ClickToSet onSet={onChange} />
       <Recenter center={[value.lat, value.lon]} />
       <Marker

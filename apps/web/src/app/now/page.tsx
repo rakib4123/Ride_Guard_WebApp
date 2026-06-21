@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LatLon, ScorePointResponse } from '@rideguard/shared';
+import type { Hotspot, LatLon, ScorePointResponse } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { useTripLog } from '@/hooks/useTripLog';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +14,7 @@ import { useAlerts } from '@/hooks/useAlerts';
 import { api } from '@/lib/api';
 import { fetchWeather, timeOfDay, type WeatherNow } from '@/lib/weather';
 import { getFix, DHAKA_CENTER } from '@/lib/geo';
+import { fetchNearbyRoads, buildRiskRoads, distMeters, type RiskRoad } from '@/lib/roadrisk';
 import { reverseGeocodeDetailed, shortLabel } from '@/lib/geocode';
 import { roadConditionFromWeather, trafficFromTime, speedLimitFromRoadType } from '@/lib/deriveContext';
 import { buildTrip } from '@/lib/buildTrip';
@@ -41,6 +42,10 @@ export default function NowPage() {
   const [locating, setLocating] = useState(false);
   const [locNote, setLocNote] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [hotspots, setHotspots] = useState<Hotspot[]>([]);
+  const [rawRoads, setRawRoads] = useState<LatLon[][]>([]);
+  const [riskRoads, setRiskRoads] = useState<RiskRoad[]>([]);
+  const roadsCenter = useRef<LatLon | null>(null);
 
   const [consent, setConsent] = useState({ logging: false, raw_gps: false });
   const [savedNote, setSavedNote] = useState<string | null>(null);
@@ -58,6 +63,10 @@ export default function NowPage() {
     setContext({ Time_of_Day: t });
     setToggles({ Traffic_Density: trafficFromTime(t) });
   }, [setContext, setToggles]);
+
+  // Road-risk overlay: load hotspots once, fetch nearby roads when the rider
+  // moves > ~200 m, and recolour whenever the behaviour score changes.
+  useEffect(() => { api.hotspots().then((r) => setHotspots(r.hotspots)).catch(() => {}); }, []);
 
   useEffect(() => {
     let active = true;
@@ -91,6 +100,20 @@ export default function NowPage() {
     });
     return () => { active = false; };
   }, [debouncedLoc, setToggles]);
+
+  useEffect(() => {
+    const c = roadsCenter.current;
+    if (c && distMeters(c, debouncedLoc) < 200) return;
+    roadsCenter.current = debouncedLoc;
+    let active = true;
+    fetchNearbyRoads(debouncedLoc, 600).then((rs) => { if (active) setRawRoads(rs); }).catch(() => {});
+    return () => { active = false; };
+  }, [debouncedLoc]);
+
+  useEffect(() => {
+    if (!rawRoads.length || !result) { setRiskRoads([]); return; }
+    setRiskRoads(buildRiskRoads(rawRoads, hotspots, result.behaviourScore));
+  }, [rawRoads, hotspots, result]);
 
   // ---- live ride wiring ----
   useEffect(() => { if (ride.riding && ride.fix) setLoc(ride.fix); }, [ride.riding, ride.fix]);
@@ -168,6 +191,7 @@ export default function NowPage() {
           value={loc}
           onChange={(l) => { if (!ride.riding) { setLoc(l); setLocNote(null); } }}
           level={result?.advisoryLevel}
+          riskRoads={riskRoads}
           zoomControl={false}
         />
       </div>
