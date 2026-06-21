@@ -34,7 +34,7 @@ export default function NowPage() {
   const { features, setToggles, setContext } = useProfile();
   const { user } = useAuth();
   const [loc, setLoc] = useState<LatLon>(DHAKA_CENTER);
-  const [locName, setLocName] = useState('Central Dhaka');
+  const [locName, setLocName] = useState('Locating…');
   const [weather, setWeather] = useState<WeatherNow | null>(null);
   const [result, setResult] = useState<ScorePointResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +127,14 @@ export default function NowPage() {
       setLocNote('Couldn’t get your location. Search or drag the pin instead.');
     } finally { setLocating(false); }
   }, []);
+
+  // Center on the rider's real location as soon as the screen opens.
+  const autoLocated = useRef(false);
+  useEffect(() => {
+    if (autoLocated.current) return;
+    autoLocated.current = true;
+    void useMyLocation();
+  }, [useMyLocation]);
 
   const onSave = useCallback(async () => {
     if (!result || !weather) return;
