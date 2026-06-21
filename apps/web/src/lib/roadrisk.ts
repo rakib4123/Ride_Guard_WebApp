@@ -42,22 +42,22 @@ export interface RiskRoad {
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.fr/api/interpreter',
 ];
 
 /** Fetch the road network around a point from OpenStreetMap via Overpass. */
 export async function fetchNearbyRoads(center: LatLon, radiusM = 600): Promise<LatLon[][]> {
   const q =
-    `[out:json][timeout:25];` +
+    `[out:json][timeout:20];` +
     `way(around:${radiusM},${center.lat},${center.lon})` +
     `["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified|living_street|service)$"];` +
     `out geom;`;
   for (const ep of OVERPASS) {
     try {
-      const res = await fetch(ep, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: q,
-      });
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 16000);
+      const res = await fetch(`${ep}?data=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+      clearTimeout(timer);
       if (!res.ok) continue;
       const j = await res.json();
       const roads: LatLon[][] = [];

@@ -111,8 +111,9 @@ export default function NowPage() {
   }, [debouncedLoc]);
 
   useEffect(() => {
-    if (!rawRoads.length || !result) { setRiskRoads([]); return; }
-    setRiskRoads(buildRiskRoads(rawRoads, hotspots, result.behaviourScore));
+    if (!rawRoads.length) { setRiskRoads([]); return; }
+    const s = result?.behaviourScore ?? 0.45; // colour roads even before the first score
+    setRiskRoads(buildRiskRoads(rawRoads, hotspots, s));
   }, [rawRoads, hotspots, result]);
 
   // ---- live ride wiring ----
