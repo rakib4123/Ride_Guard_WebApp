@@ -10,7 +10,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-xl2 border border-line bg-panel p-4 shadow-dial ${className}`}
+      className={`rounded-xl2 border border-line bg-panel p-4 shadow-card ${className}`}
     >
       {(title || action) && (
         <header className="mb-3 flex items-center justify-between">

@@ -1,27 +1,29 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Light, friendly, modern. Soft off-white canvas, white cards with gentle
- * shadows, rounded corners, a calm blue accent, and a clear green/amber/red
- * risk ramp that reads well on light surfaces.
+ * RideGuard design system — "rider's instrument cluster".
+ * Light and map-legible, but the floating UI reads like a premium motorcycle
+ * dashboard: deep ink, hairline borders, layered depth, mono data readouts,
+ * and a precise green/amber/red risk ramp.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        ink: '#FFFFFF',     // contrast text on the accent (e.g. button labels)
-        canvas: '#F4F7FB',  // page background
-        panel: '#FFFFFF',   // cards
-        panel2: '#F1F5F9',  // inputs / subtle surfaces
-        line: '#E2E8F0',    // borders
-        text: '#0F172A',    // primary text
-        muted: '#64748B',   // secondary text
-        signal: '#2563EB',  // friendly blue accent (brand, focus, primary)
+        ink: '#FFFFFF',     // text on the accent
+        canvas: '#EDF1F7',  // page background (cool off-white)
+        panel: '#FFFFFF',   // cards / sheets
+        panel2: '#EFF3F8',  // inputs / subtle fills
+        line: '#E1E6EF',    // hairline borders
+        text: '#0B1220',    // primary text (deep ink)
+        muted: '#5B6675',   // secondary text
+        signal: '#2563EB',  // brand / primary / focus
+        'signal-700': '#1D4ED8',
         risk: {
-          low: '#16A34A',
-          med: '#F59E0B',
-          high: '#EF4444',
+          low: '#12B76A',   // success
+          med: '#F79009',   // warning
+          high: '#F04438',  // danger
         },
       },
       fontFamily: {
@@ -29,11 +31,17 @@ const config: Config = {
         body: ['var(--font-body)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
-      borderRadius: { xl2: '1.25rem' },
+      borderRadius: { lg2: '0.875rem', xl2: '1.25rem', xl3: '1.5rem' },
       boxShadow: {
-        dial: '0 1px 3px rgba(15,23,42,0.06), 0 12px 28px -16px rgba(15,23,42,0.18)',
-        soft: '0 1px 2px rgba(15,23,42,0.05)',
+        soft: '0 1px 2px rgba(11,18,32,0.04), 0 1px 3px rgba(11,18,32,0.05)',
+        card: '0 1px 2px rgba(11,18,32,0.04), 0 10px 26px -14px rgba(11,18,32,0.14)',
+        lift: '0 1px 2px rgba(11,18,32,0.05), 0 16px 40px -18px rgba(11,18,32,0.20)',
+        sheet: '0 -1px 2px rgba(11,18,32,0.04), 0 -16px 44px -20px rgba(11,18,32,0.22)',
+        dial: '0 2px 8px rgba(11,18,32,0.06), 0 22px 48px -26px rgba(11,18,32,0.26)',
+        focus: '0 0 0 4px rgba(37,99,235,0.18)',
       },
+      letterSpacing: { tightish: '-0.01em' },
+      transitionTimingFunction: { swift: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     },
   },
   plugins: [],

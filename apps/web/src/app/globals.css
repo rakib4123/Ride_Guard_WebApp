@@ -7,25 +7,36 @@
 html, body { height: 100%; }
 body {
   background:
-    radial-gradient(1100px 520px at 50% -8%, rgba(37,99,235,0.07), transparent 60%),
-    #F4F7FB;
-  color: #0F172A;
+    radial-gradient(1200px 560px at 50% -12%, rgba(37,99,235,0.06), transparent 62%),
+    radial-gradient(700px 380px at 92% 8%, rgba(18,183,106,0.04), transparent 60%),
+    #EDF1F7;
+  color: #0B1220;
   font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Friendly, visible focus ring */
+/* Precise, branded focus ring */
 *:focus-visible {
   outline: 2px solid #2563EB;
   outline-offset: 2px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
-/* Light map tiles, gentle treatment */
-.leaflet-container { background: #E8EEF5; font-family: var(--font-body); }
-.leaflet-tile { filter: saturate(0.92) brightness(1.02); }
+/* Map: keep tiles calm so the UI chrome leads */
+.leaflet-container { background: #E6ECF4; font-family: var(--font-body); }
+.leaflet-tile { filter: saturate(0.88) brightness(1.03) contrast(0.98); }
+.leaflet-bar, .leaflet-control-attribution { border-radius: 10px !important; }
 
 .tabular { font-variant-numeric: tabular-nums; }
+
+/* Smooth, quiet interactions */
+button, a, [role="button"] { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease; }
+
+/* Refined scrollbars */
+* { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: 'RideGuard',
   description: 'Rider risk advisory for Dhaka motorcyclists.',
 };
-export const viewport: Viewport = { themeColor: '#F4F7FB' };
+export const viewport: Viewport = { themeColor: '#EDF1F7' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

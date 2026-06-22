@@ -14,7 +14,7 @@ const tabs = [
 export function TabNav({ inline = false }: { inline?: boolean }) {
   const path = usePathname();
   return (
-    <nav className={inline ? '' : 'fixed inset-x-0 bottom-0 z-[1300] border-t border-line bg-panel/95 backdrop-blur'}
+    <nav className={inline ? '' : 'fixed inset-x-0 bottom-0 z-[1300] border-t border-line bg-panel/90 backdrop-blur-md shadow-lift'}
       style={inline ? undefined : { paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="mx-auto flex max-w-2xl">
         {tabs.map((t) => {
@@ -22,8 +22,9 @@ export function TabNav({ inline = false }: { inline?: boolean }) {
           const active = path === t.href || (path === '/' && t.href === '/now');
           return (
             <Link key={t.href} href={t.href}
-              className="flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors"
-              style={{ color: active ? '#2563EB' : '#64748B' }}>
+              className="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold tracking-tightish"
+              style={{ color: active ? '#2563EB' : '#5B6675' }}>
+              {active && <span className="absolute top-0 h-[3px] w-7 -translate-y-px rounded-full bg-signal" />}
               <Icon />
               {t.label}
             </Link>
