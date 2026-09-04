@@ -1,9 +1,10 @@
 import type { AdvisoryLevel } from '@rideguard/shared';
+import { RISK_TOKENS } from '@/lib/riskTokens';
 
 export const riskColor: Record<AdvisoryLevel, string> = {
-  Low: '#12B76A',
-  Medium: '#F79009',
-  High: '#F04438',
+  Low: RISK_TOKENS.Low.surface,
+  Medium: RISK_TOKENS.Medium.surface,
+  High: RISK_TOKENS.High.surface,
 };
 
 export function levelFor(R: number): AdvisoryLevel {
