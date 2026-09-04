@@ -23,7 +23,7 @@ const SIZES: Record<Size, { pad: string; icon: string; title: string; sub: strin
  * in 12 men, and a handlebar-mounted phone in daylight washes colour out.
  */
 export function RiskVerdict({ verdict, size = 'md' }: { verdict: Verdict; size?: Size }) {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const token = RISK_TOKENS[verdict.level];
   const s = SIZES[size];
 
@@ -47,6 +47,11 @@ export function RiskVerdict({ verdict, size = 'md' }: { verdict: Verdict; size?:
       <div className="min-w-0 flex-1">
         <div className={`${s.title} font-bold leading-tight`}>{primary}</div>
         <div className={`${s.sub} font-semibold opacity-90`}>{secondary}</div>
+        {verdict.isPlaceholder && (
+          <div className="mt-1 text-xs font-semibold" style={{ color: token.onSurface }}>
+            {t('label.sample')}
+          </div>
+        )}
       </div>
 
       {verdict.score !== null && (
