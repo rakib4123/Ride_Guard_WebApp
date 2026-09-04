@@ -21,12 +21,18 @@ async function bootstrap() {
     .map((s) => s.trim());
   app.enableCors({ origin: origins });
 
-  const config = new DocumentBuilder()
-    .setTitle('RideGuard API')
-    .setDescription('Risk scoring + trip logging for the RideGuard rider app.')
-    .setVersion('1.0')
-    .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
+  // Swagger is served outside production unless explicitly enabled, so the
+  // deployed API does not advertise its surface to anonymous callers.
+  const docsEnabled =
+    process.env.ENABLE_API_DOCS === 'true' || process.env.NODE_ENV !== 'production';
+  if (docsEnabled) {
+    const config = new DocumentBuilder()
+      .setTitle('RideGuard API')
+      .setDescription('Risk scoring + trip logging for the RideGuard rider app.')
+      .setVersion('1.0')
+      .build();
+    SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
+  }
 
   const port = Number(process.env.PORT ?? 4000);
   await app.listen(port, '0.0.0.0');

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Hotspot, LatLon, ScorePointResponse } from '@rideguard/shared';
+import type { Hotspot, LatLon, ScorePointResponse, TripToggles } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { useTripLog } from '@/hooks/useTripLog';
 import { useAuth } from '@/context/AuthContext';
@@ -20,6 +20,7 @@ import { roadConditionFromWeather, trafficFromTime, speedLimitFromRoadType } fro
 import { buildTrip } from '@/lib/buildTrip';
 import { TopFactors } from '@/components/TopFactors';
 import { LocationSearch } from '@/components/LocationSearch';
+import { TripTogglesPanel } from '@/components/TripTogglesPanel';
 import { AlertBanner } from '@/components/AlertBanner';
 import { Lamp } from '@/components/Field';
 
@@ -53,10 +54,16 @@ export default function NowPage() {
   const [acctSaving, setAcctSaving] = useState(false);
   const startTime = useRef(new Date().toISOString());
   const prevLevel = useRef<string>('Low');
+  // The rider's own phone-use answer, restored when a ride ends.
+  const preRidePhone = useRef<TripToggles['Talk_While_Riding']>('Never');
   const { save, downloadAll, trips, saving } = useTripLog();
 
   const ride = useRide();
   const alerts = useAlerts();
+  // `alerts` is a fresh object whenever the banner appears or clears; the
+  // callbacks inside it are stable. Depend on those, or every alert would
+  // re-run the effects below and trigger a redundant re-score.
+  const { fire: fireAlert } = alerts;
 
   useEffect(() => {
     const t = timeOfDay();
@@ -120,24 +127,32 @@ export default function NowPage() {
   useEffect(() => { if (ride.riding && ride.fix) setLoc(ride.fix); }, [ride.riding, ride.fix]);
   useEffect(() => { if (ride.riding) setToggles({ Bike_Speed: ride.speedKmh }); }, [ride.riding, ride.speedKmh, setToggles]);
   useEffect(() => {
-    setToggles({ Talk_While_Riding: ride.phoneUse ? 'Regularly' : 'Never' });
-    if (ride.phoneUse) alerts.fire('phone', 'Eyes on the road. Put the phone away.', 'high');
-  }, [ride.phoneUse, setToggles, alerts]);
+    if (!ride.riding) return; // off-ride, the rider's own setting stands
+    setToggles({ Talk_While_Riding: ride.phoneUse ? 'Regularly' : preRidePhone.current });
+    if (ride.phoneUse) fireAlert('phone', 'Eyes on the road. Put the phone away.', 'high');
+  }, [ride.riding, ride.phoneUse, setToggles, fireAlert]);
   useEffect(() => {
     if (ride.riding && ride.speedKmh > features.Speed_Limit + 2) {
-      alerts.fire('speed', `Slow down. The limit here is ${features.Speed_Limit}.`, 'med');
+      fireAlert('speed', `Slow down. The limit here is ${features.Speed_Limit}.`, 'med');
     }
-  }, [ride.riding, ride.speedKmh, features.Speed_Limit, alerts]);
+  }, [ride.riding, ride.speedKmh, features.Speed_Limit, fireAlert]);
   useEffect(() => {
     const level = result?.advisoryLevel ?? 'Low';
     if (ride.riding && level === 'High' && prevLevel.current !== 'High') {
-      alerts.fire('area', 'High-risk area. Ride extra carefully.', 'high');
+      fireAlert('area', 'High-risk area. Ride extra carefully.', 'high');
     }
     prevLevel.current = level;
-  }, [result, ride.riding, alerts]);
+  }, [result, ride.riding, fireAlert]);
 
-  const startRide = () => { alerts.arm(); ride.start(); };
-  const stopRide = () => { ride.stop(); setToggles({ Talk_While_Riding: 'Never' }); };
+  const startRide = () => {
+    preRidePhone.current = features.Talk_While_Riding; // restore this on stop
+    alerts.arm();
+    ride.start();
+  };
+  const stopRide = () => {
+    ride.stop();
+    setToggles({ Talk_While_Riding: preRidePhone.current });
+  };
 
   const useMyLocation = useCallback(async () => {
     setLocating(true); setLocNote(null);
@@ -163,12 +178,12 @@ export default function NowPage() {
   const onSave = useCallback(async () => {
     if (!result || !weather) return;
     await save(buildTrip({
-      riderId: 'demo-rider', features, origin: loc, destination: loc,
+      riderId: user?.id ?? 'anonymous', features, origin: loc, destination: loc,
       point: result, weather, consent, startTime: startTime.current,
     }));
     setSavedNote('Saved. Thanks for helping validate the model.');
     setTimeout(() => setSavedNote(null), 3000);
-  }, [result, weather, features, loc, consent, save]);
+  }, [result, weather, features, loc, consent, save, user]);
 
   const saveToAccount = useCallback(async () => {
     if (!result) return;
@@ -292,6 +307,16 @@ export default function NowPage() {
               <div>
                 <h3 className="mb-2 text-sm font-semibold text-text">What&apos;s driving your score</h3>
                 <TopFactors factors={result?.topFactors ?? []} />
+              </div>
+
+              <div className="border-t border-line pt-3">
+                <h3 className="mb-1 text-sm font-semibold text-text">Trip conditions</h3>
+                <p className="mb-3 text-xs text-muted">
+                  Helmet, alcohol, smoking and phone use are the factors the model weighs most
+                  heavily, and no sensor can read them — set them honestly for a real reading.
+                  {ride.riding && ' Phone use is sensed automatically while you ride.'}
+                </p>
+                <TripTogglesPanel />
               </div>
 
               <div className="border-t border-line pt-3">

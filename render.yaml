@@ -21,6 +21,13 @@ services:
       # Leave UNSET to run on the transparent mock scorer instead of the real model.
       - key: MODEL_SERVICE_URL
         sync: false
+      # HMAC key pseudonymising rider ids before storage. Render generates one.
+      - key: RIDER_ID_SALT
+        generateValue: true
+      # Set only if you need the admin-only bulk trip-read endpoints; callers
+      # must send it as `x-admin-token`. Unset = those endpoints stay disabled.
+      - key: ADMIN_TOKEN
+        sync: false
 
   - type: web
     name: rideguard-model

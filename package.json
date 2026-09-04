@@ -14,7 +14,8 @@
     "dev:model": "cd apps/model && (python3 -m uvicorn service:app --port 8000 || uvicorn service:app --port 8000)",
     "dev": "npm run build:shared && concurrently -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev:web\"",
     "build": "npm run build:shared && npm run build --workspace @rideguard/api && npm run build --workspace @rideguard/web",
-    "lint": "echo \"add eslint per app as needed\""
+    "lint": "echo \"add eslint per app as needed\"",
+    "test": "npm run test --workspace @rideguard/api"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
