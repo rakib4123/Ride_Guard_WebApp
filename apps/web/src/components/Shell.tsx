@@ -8,6 +8,9 @@ import { PlaceholderBanner } from '@/components/PlaceholderBanner';
 import { AccountBar } from '@/components/AccountBar';
 import { Splash } from '@/components/Splash';
 
+/** How long the branded splash is held before content may take over. */
+const MIN_SPLASH_MS = 1200;
+
 const AUTH_ROUTES = ['/login', '/signup'];
 const FULL_BLEED = ['/now', '/', '/map', '/route']; // map-first screens manage their own chrome
 
@@ -16,11 +19,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading, configured } = useAuth();
   const isAuthRoute = AUTH_ROUTES.includes(path);
-  const [booting, setBooting] = useState(true);
+  // The splash holds for a brief branded minimum, then clears as soon as auth
+  // has resolved. It is not a fixed delay: this is a safety app, and a rider
+  // checking conditions before pulling away should not wait on an animation.
+  const [minSplashDone, setMinSplashDone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setBooting(false), 5000);
+    const t = setTimeout(() => setMinSplashDone(true), MIN_SPLASH_MS);
     return () => clearTimeout(t);
   }, []);
+  const booting = !minSplashDone || (configured && loading);
 
   useEffect(() => {
     if (!configured || loading) return;
@@ -28,7 +35,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (user && isAuthRoute) router.replace('/now');
   }, [user, loading, configured, isAuthRoute, router]);
 
-  if (booting || (configured && loading)) {
+  if (booting) {
     return <Splash />;
   }
 

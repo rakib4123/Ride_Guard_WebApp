@@ -40,25 +40,37 @@ export default function RoutePage() {
     getFix().then((f) => setOrigin({ lat: f.lat, lon: f.lon })).catch(() => {});
   }, []);
 
+  // Routing and scoring are split: OSRM is a rate-limited public endpoint, so
+  // it is only re-queried when the endpoints actually move — not every time the
+  // shared `features` object gets a new identity.
+  const [path, setPath] = useState<LatLon[] | null>(null);
   useEffect(() => {
     let active = true;
     setLoading(true); setError(null);
-    (async () => {
-      try {
-        const path = await fetchRoute(dOrigin, dDest);
+    fetchRoute(dOrigin, dDest)
+      .then((r) => {
         if (!active) return;
-        setFallback(path.fallback);
-        setDistanceKm(path.distanceKm);
-        const r = await api.scoreRoute(features, path.points);
-        if (active) setRoute(r);
-      } catch {
-        if (active) setError('Could not reach the scoring API.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
+        setFallback(r.fallback);
+        setDistanceKm(r.distanceKm);
+        setPath(r.points);
+      })
+      .catch(() => { if (active) { setError('Could not fetch the route.'); setLoading(false); } });
     return () => { active = false; };
-  }, [dOrigin, dDest, features]);
+  }, [dOrigin, dDest]);
+
+  // Re-score when the path or the feature *values* change (not their identity).
+  const featuresKey = JSON.stringify(features);
+  useEffect(() => {
+    if (!path) return;
+    let active = true;
+    setLoading(true);
+    api.scoreRoute(features, path)
+      .then((r) => { if (active) { setRoute(r); setError(null); } })
+      .catch(() => { if (active) setError('Could not reach the scoring API.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, featuresKey]);
 
   const stats = useMemo(
     () => (route ? [
