@@ -1114,6 +1114,8 @@ reporting "Low" when the scoring service is down.
 Each gets its own plan once its predecessor lands, so every phase is independently shippable.
 
 - **Phase 2 — Now + ride mode.** Split `now/page.tsx` into `NowParked` / `RideMode` / `useNowScore`; full-screen ride takeover with speed dominant; move alert channels to Profile with a Test-alert button; unify the two save buttons.
+  - **Spec §11 — denied geolocation.** Today a denied permission silently falls back to `DHAKA_CENTER` and scores/renders it as a confident reading. Per spec, a denied permission should instead centre the map on Dhaka and show the verdict as `Unknown` with the message "Turn on location to get a reading." The catalogue key `label.unknownHelp` already exists for this string and is currently unused — wire it up here.
+  - **Spec §9 — locale persistence across devices.** The rider's language choice is currently `localStorage` only (see `apps/web/src/i18n/LocaleContext.tsx`), so it does not follow the rider to a new device. Per spec it should also be mirrored to the rider's Supabase profile, read back on login, and reconciled with the local value.
 - **Phase 3 — Route + Map.** OSRM `alternatives=true` and a ranked route picker; riskiest stretch named as a place; remove the A/B tap-target mode switch; replace `Fused R / Spatial π / Behaviour s` with plain cause; hotspots as soft blooms with the area-level caveat.
 - **Phase 4 — Trips + Profile.** Month summary bar, ride cards, swipe-to-delete, restructured Profile sections.
 

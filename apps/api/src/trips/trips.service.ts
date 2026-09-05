@@ -18,6 +18,16 @@ export class TripsService {
     @Inject(TRIPS_REPOSITORY) private readonly repo: TripsRepository,
   ) {
     if (!process.env.RIDER_ID_SALT) {
+      // Mirror AdminGuard: fail closed in production rather than silently
+      // pseudonymising rider ids with a default key that is public in this
+      // repository — the exact reversible-hash problem this code exists to
+      // fix. Non-production runs (and the test suite) keep the dev default.
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'RIDER_ID_SALT must be set in production. Refusing to start with ' +
+            'a default pseudonymisation key that is public in this repository.',
+        );
+      }
       this.logger.warn(
         'RIDER_ID_SALT is not set — rider ids are hashed with a default key, ' +
           'which is reversible for low-entropy ids such as email addresses. ' +

@@ -3,6 +3,12 @@ import type { BehaviourResult, FeatureVector } from '@rideguard/shared';
 import { BehaviourScorer } from './behaviour.scorer';
 import { MockScorer } from './mock.scorer';
 
+/** Parses an env var as a number, falling back to `fallback` for missing, empty, or non-numeric values. */
+function parseEnvNumber(raw: string | undefined, fallback: number): number {
+  const n = Number(raw);
+  return raw !== undefined && raw !== '' && Number.isFinite(n) ? n : fallback;
+}
+
 /**
  * Real Tier-1 scorer: calls the Python model sidecar (apps/model) over HTTP.
  * Falls back to the transparent mock if MODEL_SERVICE_URL is unset or the
@@ -17,8 +23,12 @@ import { MockScorer } from './mock.scorer';
 export class HttpScorer implements BehaviourScorer {
   private readonly logger = new Logger(HttpScorer.name);
   private readonly url = process.env.MODEL_SERVICE_URL;
-  private readonly timeoutMs = Number(process.env.MODEL_TIMEOUT_MS ?? 30_000);
-  private readonly retries = Number(process.env.MODEL_RETRIES ?? 1);
+  // `Number(x)` turns a non-numeric env value into NaN and an empty string
+  // into 0; either would make `attempt <= this.retries` false on the first
+  // try, so the scorer would silently return the mock forever with no log.
+  // Guard with Number.isFinite and fall back to the documented defaults.
+  private readonly timeoutMs = parseEnvNumber(process.env.MODEL_TIMEOUT_MS, 30_000);
+  private readonly retries = parseEnvNumber(process.env.MODEL_RETRIES, 1);
 
   constructor(private readonly fallback: MockScorer) {}
 

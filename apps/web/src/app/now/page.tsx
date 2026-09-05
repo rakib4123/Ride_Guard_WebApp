@@ -41,6 +41,11 @@ export default function NowPage() {
   const [weather, setWeather] = useState<WeatherNow | null>(null);
   const [result, setResult] = useState<ScorePointResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // True while a score request is in flight. Distinguishes "no reading yet
+  // because we're waiting on a normal (possibly slow, cold-start) request"
+  // from "no reading because the last request failed" — both leave `result`
+  // null, but they must not look the same to the rider.
+  const [scoring, setScoring] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locNote, setLocNote] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -92,9 +97,18 @@ export default function NowPage() {
   useEffect(() => {
     let active = true;
     setError(null);
+    setScoring(true);
     api.scorePoint(debScore.features, debScore.loc)
-      .then((r) => active && setResult(r))
-      .catch(() => active && setError('Could not reach the scoring service.'));
+      .then((r) => { if (active) setResult(r); })
+      .catch(() => {
+        if (!active) return;
+        // A failed re-score must not leave the PREVIOUS location's verdict on
+        // screen looking current — clear it rather than let a stale reading
+        // ride along under a 12px error line.
+        setResult(null);
+        setError('Could not reach the scoring service.');
+      })
+      .finally(() => { if (active) setScoring(false); });
     return () => { active = false; };
   }, [debScore]);
 
@@ -251,7 +265,7 @@ export default function NowPage() {
           </button>
 
           {/* Peek: verdict band + location */}
-          <RiskVerdict verdict={verdict} size="lg" />
+          <RiskVerdict verdict={verdict} size="lg" pending={scoring && !result} />
           <p className="mt-2 truncate text-sm font-medium text-text">{locName}</p>
 
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
