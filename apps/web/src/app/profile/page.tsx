@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/context/ProfileContext';
 import { Card } from '@/components/Card';
 import { ProfilePanel } from '@/components/ProfilePanel';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
 export default function ProfilePage() {
   const { user, configured, signOut } = useAuth();
@@ -37,6 +38,10 @@ export default function ProfilePage() {
             You’re not signed in. <Link href="/login" className="font-medium text-signal">Sign in</Link>
           </p>
         )}
+      </Card>
+
+      <Card title="Language · ভাষা">
+        <LanguageToggle />
       </Card>
 
       <Card title="Rider profile"
