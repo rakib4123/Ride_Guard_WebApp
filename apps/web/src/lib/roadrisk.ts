@@ -1,5 +1,7 @@
 import type { Hotspot, LatLon } from '@rideguard/shared';
 import { SPATIAL_KERNEL_SIGMA_M, FUSION_LAMBDA } from '@rideguard/shared';
+import { RISK_TOKENS } from '@/lib/riskTokens';
+import { levelFor } from '@/lib/format';
 
 const R_EARTH = 6_371_000;
 
@@ -30,8 +32,13 @@ export function fuseRisk(s: number, pi: number): number {
   return Math.max(0, Math.min(1, s * (1 + FUSION_LAMBDA * (2 * pi - 1))));
 }
 
+/**
+ * Colour for the road overlay. Derived from the same RISK_TOKENS the verdict
+ * band uses (via `levelFor`'s thresholds) so the road under a rider's pin is
+ * never a different shade of "risky" than the verdict sitting on top of it.
+ */
 export function riskHexFor(R: number): string {
-  return R < 0.33 ? '#16A34A' : R < 0.6 ? '#F59E0B' : '#EF4444';
+  return RISK_TOKENS[levelFor(R)].surface;
 }
 
 export interface RiskRoad {

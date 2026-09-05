@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import { RISK_TOKENS } from './src/lib/riskTokens';
 
 /**
  * RideGuard design system — "rider's instrument cluster".
@@ -20,10 +21,13 @@ const config: Config = {
         muted: '#5B6675',   // secondary text
         signal: '#2563EB',  // brand / primary / focus
         'signal-700': '#1D4ED8',
+        // Sourced from RISK_TOKENS (src/lib/riskTokens.ts) so the measured,
+        // WCAG-checked hexes live in exactly one place.
         risk: {
-          low: '#12B76A',   // success
-          med: '#F79009',   // warning
-          high: '#F04438',  // danger
+          low: RISK_TOKENS.Low.surface,
+          med: RISK_TOKENS.Medium.surface,
+          high: RISK_TOKENS.High.surface,
+          unknown: RISK_TOKENS.Unknown.surface,
         },
       },
       fontFamily: {

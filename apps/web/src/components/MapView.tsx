@@ -10,7 +10,6 @@ import {
 import type { Hotspot, LatLon, RouteSegment } from '@rideguard/shared';
 import { riskColor } from '@/lib/format';
 
-const DHAKA: [number, number] = [23.7806, 90.407];
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -48,6 +47,9 @@ function ClickToSet({ onSet }: { onSet: (loc: LatLon) => void }) {
 }
 
 function HotspotLayer({ hotspots }: { hotspots: Hotspot[] }) {
+  // Deliberately NOT the RISK_TOKENS palette: this colours raw hotspot
+  // density (normDensity, 0..1), a different quantity from fused risk R.
+  // Unifying the two scales is deferred to a later phase.
   const color = (d: number) => (d < 0.4 ? '#16A34A' : d < 0.7 ? '#F59E0B' : '#EF4444');
   return (
     <>
@@ -58,17 +60,6 @@ function HotspotLayer({ hotspots }: { hotspots: Hotspot[] }) {
             fillOpacity: 0.1 + h.normDensity * 0.3, weight: 0 }} />
       ))}
     </>
-  );
-}
-
-/** Pure hotspot display (used as a base layer elsewhere). */
-export function HotspotMap({ hotspots }: { hotspots: Hotspot[] }) {
-  const [k] = useState(() => `hs-${Math.random().toString(36).slice(2)}`);
-  return (
-    <MapContainer key={k} center={DHAKA} zoom={12} className="h-full w-full" scrollWheelZoom>
-      <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
-      <HotspotLayer hotspots={hotspots} />
-    </MapContainer>
   );
 }
 

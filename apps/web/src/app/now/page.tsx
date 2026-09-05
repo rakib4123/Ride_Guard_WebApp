@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Hotspot, LatLon, ScorePointResponse } from '@rideguard/shared';
+import type { Hotspot, LatLon, ScorePointResponse, TripToggles } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { useTripLog } from '@/hooks/useTripLog';
 import { useAuth } from '@/context/AuthContext';
@@ -18,9 +18,12 @@ import { fetchNearbyRoads, buildRiskRoads, distMeters, type RiskRoad } from '@/l
 import { reverseGeocodeDetailed, shortLabel } from '@/lib/geocode';
 import { roadConditionFromWeather, trafficFromTime, speedLimitFromRoadType } from '@/lib/deriveContext';
 import { buildTrip } from '@/lib/buildTrip';
+import { buildVerdict } from '@/lib/verdict';
 import { TopFactors } from '@/components/TopFactors';
 import { LocationSearch } from '@/components/LocationSearch';
+import { TripTogglesPanel } from '@/components/TripTogglesPanel';
 import { AlertBanner } from '@/components/AlertBanner';
+import { RiskVerdict } from '@/components/RiskVerdict';
 import { Lamp } from '@/components/Field';
 
 const PointPickerMap = dynamic(
@@ -28,7 +31,6 @@ const PointPickerMap = dynamic(
   { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-muted">Loading map…</div> },
 );
 
-const BAND = { Low: '#16A34A', Medium: '#F59E0B', High: '#EF4444' } as const;
 const pctOf = (x: number) => `${Math.round(x * 100)}%`;
 
 export default function NowPage() {
@@ -39,6 +41,11 @@ export default function NowPage() {
   const [weather, setWeather] = useState<WeatherNow | null>(null);
   const [result, setResult] = useState<ScorePointResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // True while a score request is in flight. Distinguishes "no reading yet
+  // because we're waiting on a normal (possibly slow, cold-start) request"
+  // from "no reading because the last request failed" — both leave `result`
+  // null, but they must not look the same to the rider.
+  const [scoring, setScoring] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locNote, setLocNote] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -53,10 +60,16 @@ export default function NowPage() {
   const [acctSaving, setAcctSaving] = useState(false);
   const startTime = useRef(new Date().toISOString());
   const prevLevel = useRef<string>('Low');
+  // The rider's own phone-use answer, restored when a ride ends.
+  const preRidePhone = useRef<TripToggles['Talk_While_Riding']>('Never');
   const { save, downloadAll, trips, saving } = useTripLog();
 
   const ride = useRide();
   const alerts = useAlerts();
+  // `alerts` is a fresh object whenever the banner appears or clears; the
+  // callbacks inside it are stable. Depend on those, or every alert would
+  // re-run the effects below and trigger a redundant re-score.
+  const { fire: fireAlert } = alerts;
 
   useEffect(() => {
     const t = timeOfDay();
@@ -84,9 +97,18 @@ export default function NowPage() {
   useEffect(() => {
     let active = true;
     setError(null);
+    setScoring(true);
     api.scorePoint(debScore.features, debScore.loc)
-      .then((r) => active && setResult(r))
-      .catch(() => active && setError('Could not reach the scoring service.'));
+      .then((r) => { if (active) setResult(r); })
+      .catch(() => {
+        if (!active) return;
+        // A failed re-score must not leave the PREVIOUS location's verdict on
+        // screen looking current — clear it rather than let a stale reading
+        // ride along under a 12px error line.
+        setResult(null);
+        setError('Could not reach the scoring service.');
+      })
+      .finally(() => { if (active) setScoring(false); });
     return () => { active = false; };
   }, [debScore]);
 
@@ -120,24 +142,34 @@ export default function NowPage() {
   useEffect(() => { if (ride.riding && ride.fix) setLoc(ride.fix); }, [ride.riding, ride.fix]);
   useEffect(() => { if (ride.riding) setToggles({ Bike_Speed: ride.speedKmh }); }, [ride.riding, ride.speedKmh, setToggles]);
   useEffect(() => {
-    setToggles({ Talk_While_Riding: ride.phoneUse ? 'Regularly' : 'Never' });
-    if (ride.phoneUse) alerts.fire('phone', 'Eyes on the road. Put the phone away.', 'high');
-  }, [ride.phoneUse, setToggles, alerts]);
+    if (!ride.riding) return; // off-ride, the rider's own setting stands
+    setToggles({ Talk_While_Riding: ride.phoneUse ? 'Regularly' : preRidePhone.current });
+    if (ride.phoneUse) fireAlert('phone', 'Eyes on the road. Put the phone away.', 'high');
+  }, [ride.riding, ride.phoneUse, setToggles, fireAlert]);
   useEffect(() => {
     if (ride.riding && ride.speedKmh > features.Speed_Limit + 2) {
-      alerts.fire('speed', `Slow down. The limit here is ${features.Speed_Limit}.`, 'med');
+      fireAlert('speed', `Slow down. The limit here is ${features.Speed_Limit}.`, 'med');
     }
-  }, [ride.riding, ride.speedKmh, features.Speed_Limit, alerts]);
+  }, [ride.riding, ride.speedKmh, features.Speed_Limit, fireAlert]);
   useEffect(() => {
-    const level = result?.advisoryLevel ?? 'Low';
+    // No result means no transition to announce — do not treat silence as 'Low'.
+    if (!result) return;
+    const level = result.advisoryLevel;
     if (ride.riding && level === 'High' && prevLevel.current !== 'High') {
-      alerts.fire('area', 'High-risk area. Ride extra carefully.', 'high');
+      fireAlert('area', 'High-risk area. Ride extra carefully.', 'high');
     }
     prevLevel.current = level;
-  }, [result, ride.riding, alerts]);
+  }, [result, ride.riding, fireAlert]);
 
-  const startRide = () => { alerts.arm(); ride.start(); };
-  const stopRide = () => { ride.stop(); setToggles({ Talk_While_Riding: 'Never' }); };
+  const startRide = () => {
+    preRidePhone.current = features.Talk_While_Riding; // restore this on stop
+    alerts.arm();
+    ride.start();
+  };
+  const stopRide = () => {
+    ride.stop();
+    setToggles({ Talk_While_Riding: preRidePhone.current });
+  };
 
   const useMyLocation = useCallback(async () => {
     setLocating(true); setLocNote(null);
@@ -163,12 +195,12 @@ export default function NowPage() {
   const onSave = useCallback(async () => {
     if (!result || !weather) return;
     await save(buildTrip({
-      riderId: 'demo-rider', features, origin: loc, destination: loc,
+      riderId: user?.id ?? 'anonymous', features, origin: loc, destination: loc,
       point: result, weather, consent, startTime: startTime.current,
     }));
     setSavedNote('Saved. Thanks for helping validate the model.');
     setTimeout(() => setSavedNote(null), 3000);
-  }, [result, weather, features, loc, consent, save]);
+  }, [result, weather, features, loc, consent, save, user]);
 
   const saveToAccount = useCallback(async () => {
     if (!result) return;
@@ -182,7 +214,7 @@ export default function NowPage() {
     } finally { setAcctSaving(false); }
   }, [result, loc, features, locName]);
 
-  const level = result?.advisoryLevel ?? 'Low';
+  const verdict = buildVerdict(result, features);
   const initials = (user?.email ?? 'R').slice(0, 2).toUpperCase();
 
   return (
@@ -191,7 +223,7 @@ export default function NowPage() {
         <PointPickerMap
           value={loc}
           onChange={(l) => { if (!ride.riding) { setLoc(l); setLocNote(null); } }}
-          level={result?.advisoryLevel}
+          level={verdict.level === 'Unknown' ? undefined : verdict.level}
           riskRoads={riskRoads}
           zoomControl={false}
         />
@@ -232,20 +264,9 @@ export default function NowPage() {
             <span className="mx-auto block h-1 w-10 rounded-full bg-line" />
           </button>
 
-          {/* Peek: ring + location + metrics */}
-          <div className="flex items-center gap-3">
-            <RiskRing value={result?.R ?? 0} level={level} placeholder={result?.isPlaceholder} />
-            <div className="min-w-0 flex-1">
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-                style={{ background: `${BAND[level]}1a`, color: BAND[level] }}>
-                {level} risk{result?.isPlaceholder ? ' · sample' : ''}
-              </span>
-              <p className="mt-1 truncate text-sm font-medium text-text">{locName}</p>
-              <p className="truncate text-xs text-muted">
-                {ride.riding ? `Live · ${ride.speedKmh} km/h` : weather ? `${features.Weather} · ${features.Road_Type}` : '…'}
-              </p>
-            </div>
-          </div>
+          {/* Peek: verdict band + location */}
+          <RiskVerdict verdict={verdict} size="lg" pending={scoring && !result} />
+          <p className="mt-2 truncate text-sm font-medium text-text">{locName}</p>
 
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             <Metric label="Your riding" value={result ? pctOf(result.behaviourScore) : '—'} />
@@ -295,6 +316,16 @@ export default function NowPage() {
               </div>
 
               <div className="border-t border-line pt-3">
+                <h3 className="mb-1 text-sm font-semibold text-text">Trip conditions</h3>
+                <p className="mb-3 text-xs text-muted">
+                  Helmet, alcohol, smoking and phone use are the factors the model weighs most
+                  heavily, and no sensor can read them — set them honestly for a real reading.
+                  {ride.riding && ' Phone use is sensed automatically while you ride.'}
+                </p>
+                <TripTogglesPanel />
+              </div>
+
+              <div className="border-t border-line pt-3">
                 <h3 className="mb-2 text-sm font-semibold text-text">Log this trip</h3>
                 <div className="grid grid-cols-1 gap-2">
                   <Lamp label="I'm OK with logging this trip" on={consent.logging}
@@ -331,19 +362,6 @@ export default function NowPage() {
   );
 }
 
-function RiskRing({ value, level, placeholder }: { value: number; level: 'Low' | 'Medium' | 'High'; placeholder?: boolean }) {
-  const pct = Math.max(0, Math.min(1, value));
-  const C = 2 * Math.PI * 30;
-  const color = placeholder ? '#94A3B8' : BAND[level];
-  return (
-    <svg viewBox="0 0 72 72" width="64" height="64" className="flex-none">
-      <circle cx="36" cy="36" r="30" fill="none" stroke="#E2E8F0" strokeWidth="8" />
-      <circle cx="36" cy="36" r="30" fill="none" stroke={color} strokeWidth="8" strokeLinecap="round"
-        strokeDasharray={C} strokeDashoffset={C * (1 - pct)} transform="rotate(-90 36 36)" />
-      <text x="36" y="41" textAnchor="middle" fontSize="19" fontWeight="700" fill="#0F172A">{Math.round(pct * 100)}</text>
-    </svg>
-  );
-}
 function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className={`rounded-xl py-2 ${highlight ? 'bg-signal/10' : 'bg-panel2'}`}>
