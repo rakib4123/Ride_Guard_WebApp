@@ -23,6 +23,7 @@ export const en = {
   'label.language': 'Language',
   'label.sample': 'Sample reading — not the real model',
   'label.unknownHelp': 'Cannot reach RideGuard right now',
+  'label.checking': 'Checking…',
 } as const;
 
 /** Every translatable string in the app is one of these. */

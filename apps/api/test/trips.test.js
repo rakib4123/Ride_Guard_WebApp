@@ -106,6 +106,32 @@ test('the rider id is keyed by the salt, not a bare digest', async () => {
   assert.notEqual(two, bare);
 });
 
+test('refuses to start in production without RIDER_ID_SALT', () => {
+  const prevSalt = process.env.RIDER_ID_SALT;
+  const prevEnv = process.env.NODE_ENV;
+  delete process.env.RIDER_ID_SALT;
+  process.env.NODE_ENV = 'production';
+  try {
+    assert.throws(() => new TripsService(fakeRepo()), /RIDER_ID_SALT/);
+  } finally {
+    if (prevEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = prevEnv;
+    if (prevSalt === undefined) delete process.env.RIDER_ID_SALT; else process.env.RIDER_ID_SALT = prevSalt;
+  }
+});
+
+test('warns but does not throw outside production without RIDER_ID_SALT', () => {
+  const prevSalt = process.env.RIDER_ID_SALT;
+  const prevEnv = process.env.NODE_ENV;
+  delete process.env.RIDER_ID_SALT;
+  process.env.NODE_ENV = 'development';
+  try {
+    assert.doesNotThrow(() => new TripsService(fakeRepo()));
+  } finally {
+    if (prevEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = prevEnv;
+    if (prevSalt === undefined) delete process.env.RIDER_ID_SALT; else process.env.RIDER_ID_SALT = prevSalt;
+  }
+});
+
 test('server-assigned fields are stamped, and each trip gets a unique id', async () => {
   const svc = new TripsService(fakeRepo());
   const a = await svc.create(input({ logging: true, raw_gps: true }));

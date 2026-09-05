@@ -27,4 +27,5 @@ export const bn: Record<MessageKey, string> = {
   'label.language': 'ভাষা',
   'label.sample': 'নমুনা ফলাফল — প্রকৃত মডেল নয়',
   'label.unknownHelp': 'এখন RideGuard-এর সাথে সংযোগ করা যাচ্ছে না',
+  'label.checking': 'যাচাই করা হচ্ছে…',
 };

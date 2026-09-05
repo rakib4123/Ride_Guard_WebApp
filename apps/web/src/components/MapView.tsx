@@ -47,6 +47,9 @@ function ClickToSet({ onSet }: { onSet: (loc: LatLon) => void }) {
 }
 
 function HotspotLayer({ hotspots }: { hotspots: Hotspot[] }) {
+  // Deliberately NOT the RISK_TOKENS palette: this colours raw hotspot
+  // density (normDensity, 0..1), a different quantity from fused risk R.
+  // Unifying the two scales is deferred to a later phase.
   const color = (d: number) => (d < 0.4 ? '#16A34A' : d < 0.7 ? '#F59E0B' : '#EF4444');
   return (
     <>
