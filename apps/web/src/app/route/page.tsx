@@ -1,8 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
-import type { LatLon, ScoreRouteResponse } from '@rideguard/shared';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { LatLon, ScoreRouteResponse, TrafficRouteResponse } from '@rideguard/shared';
 import { useProfile } from '@/context/ProfileContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { api } from '@/lib/api';
@@ -40,12 +40,26 @@ export default function RoutePage() {
     getFix().then((f) => setOrigin({ lat: f.lat, lon: f.lon })).catch(() => {});
   }, []);
 
+  // Live traffic is paid (Google), so it is fetched only when the rider asks,
+  // and only offered when the API has a Google key.
+  type LiveTraffic = Extract<TrafficRouteResponse, { available: true }>;
+  const [liveAvailable, setLiveAvailable] = useState(false);
+  const [traffic, setTraffic] = useState<LiveTraffic | null>(null);
+  const [trafficLoading, setTrafficLoading] = useState(false);
+  const [trafficNote, setTrafficNote] = useState<string | null>(null);
+  const endpointsKey = useRef('');
+  useEffect(() => {
+    api.health().then((h) => setLiveAvailable(h.liveTraffic === 'google')).catch(() => {});
+  }, []);
+
   // Routing and scoring are split: OSRM is a rate-limited public endpoint, so
   // it is only re-queried when the endpoints actually move — not every time the
   // shared `features` object gets a new identity.
   const [path, setPath] = useState<LatLon[] | null>(null);
   useEffect(() => {
     let active = true;
+    endpointsKey.current = JSON.stringify([dOrigin, dDest]);
+    setTraffic(null); setTrafficNote(null); // a live reading belongs to the old route
     setLoading(true); setError(null);
     fetchRoute(dOrigin, dDest)
       .then((r) => {
@@ -58,19 +72,37 @@ export default function RoutePage() {
     return () => { active = false; };
   }, [dOrigin, dDest]);
 
+  const checkLiveTraffic = () => {
+    const key = endpointsKey.current;
+    setTrafficLoading(true); setTrafficNote(null);
+    api.trafficRoute(dOrigin, dDest)
+      .then((r) => {
+        if (endpointsKey.current !== key) return; // the rider moved A or B meanwhile
+        if (!r.available) { setTrafficNote('Live traffic is unavailable right now.'); return; }
+        setTraffic(r);
+        setPath(r.path);
+        setDistanceKm(r.distanceKm);
+        setFallback(false);
+      })
+      .catch(() => setTrafficNote('Live traffic is unavailable right now.'))
+      .finally(() => setTrafficLoading(false));
+  };
+
   // Re-score when the path or the feature *values* change (not their identity).
+  // With live traffic, its measured level replaces the time-of-day guess.
   const featuresKey = JSON.stringify(features);
   useEffect(() => {
     if (!path) return;
     let active = true;
     setLoading(true);
-    api.scoreRoute(features, path)
+    const scored = traffic ? { ...features, Traffic_Density: traffic.trafficDensity } : features;
+    api.scoreRoute(scored, path)
       .then((r) => { if (active) { setRoute(r); setError(null); } })
       .catch(() => { if (active) setError('Could not reach the scoring API.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, featuresKey]);
+  }, [path, featuresKey, traffic]);
 
   const stats = useMemo(
     () => (route ? [
@@ -121,6 +153,21 @@ export default function RoutePage() {
             </p>
             {route && <AdvisoryBadge level={route.routeLevel} />}
           </div>
+          {traffic ? (
+            <div className="mt-2 text-xs text-muted">
+              <p className="text-sm text-text">
+                Live traffic: {Math.round(traffic.durationMin)} min
+                {' '}({Math.round(traffic.freeFlowMin)} min when clear) · traffic {traffic.trafficDensity}/8
+              </p>
+              <p>Route &amp; traffic: Google Maps. Motorcycle routes are in beta and may not be the best path.</p>
+            </div>
+          ) : liveAvailable && (
+            <button onClick={checkLiveTraffic} disabled={trafficLoading || loading || !path}
+              className="mt-2 rounded-full border border-line px-3 py-1 text-xs font-medium text-signal disabled:opacity-50">
+              {trafficLoading ? 'Checking traffic…' : 'Check live traffic'}
+            </button>
+          )}
+          {trafficNote && <p className="mt-1 text-xs text-muted">{trafficNote}</p>}
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             {(stats.length ? stats : [{ label: 'Mean', value: 0 }, { label: 'P90', value: 0 }, { label: 'Max', value: 0 }]).map((s) => (
               <div key={s.label} className="rounded-lg bg-panel2 py-2">
