@@ -32,3 +32,19 @@ export function LanguageToggle() {
     </div>
   );
 }
+
+/** Compact one-tap switch for map screens' top bar (shows the OTHER language). */
+export function LanguageChip() {
+  const { locale, setLocale } = useLocale();
+  const next: Locale = locale === 'bn' ? 'en' : 'bn';
+  return (
+    <button
+      onClick={() => setLocale(next)}
+      aria-label={next === 'bn' ? 'বাংলায় দেখুন' : 'Switch to English'}
+      lang={next}
+      className="pointer-events-auto flex h-11 min-w-11 flex-none items-center justify-center rounded-full border border-line bg-white px-3 text-sm font-semibold text-text shadow-soft"
+    >
+      {next === 'bn' ? 'বাং' : 'EN'}
+    </button>
+  );
+}

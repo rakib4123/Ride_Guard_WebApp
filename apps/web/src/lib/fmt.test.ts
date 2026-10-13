@@ -22,7 +22,9 @@ describe('fmt', () => {
   });
 
   it('never emits Bengali digits', () => {
-    const out = [fmt.pct(0.4), fmt.km(18.2), fmt.speed(52)].join('');
+    const d = new Date(2026, 9, 13, 18, 45);
+    const out = [fmt.pct(0.4), fmt.km(18.2), fmt.speed(52), fmt.dateTime(d, 'bn'), fmt.dateTime(d, 'en')].join('');
     expect(out).not.toMatch(/[০-৯]/);
+    expect(fmt.dateTime(d, 'bn')).toMatch(/13/);
   });
 });

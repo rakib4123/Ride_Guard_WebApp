@@ -1,10 +1,12 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/i18n/LocaleContext';
 
 /** Compact account control shown in the header when signed in. */
 export function AccountBar() {
   const { user, configured, signOut } = useAuth();
+  const t = useT();
   if (!configured || !user) return null;
   return (
     <div className="flex items-center gap-2 text-xs">
@@ -13,7 +15,7 @@ export function AccountBar() {
         onClick={() => signOut()}
         className="rounded-lg border border-line px-2.5 py-1 font-medium text-text hover:border-signal/50"
       >
-        Sign out
+        {t('profile.signOut')}
       </button>
     </div>
   );

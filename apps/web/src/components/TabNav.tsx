@@ -2,31 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useT } from '@/i18n/LocaleContext';
+import type { MessageKey } from '@/i18n/messages/en';
 
-const tabs = [
-  { href: '/now', label: 'Now', icon: GaugeIcon },
-  { href: '/route', label: 'Route', icon: RouteIcon },
-  { href: '/map', label: 'Map', icon: MapIcon },
-  { href: '/history', label: 'Trips', icon: HistoryIcon },
-  { href: '/profile', label: 'Profile', icon: UserIcon },
+const tabs: { href: string; label: MessageKey; icon: () => JSX.Element }[] = [
+  { href: '/now', label: 'nav.now', icon: GaugeIcon },
+  { href: '/route', label: 'nav.route', icon: RouteIcon },
+  { href: '/map', label: 'nav.map', icon: MapIcon },
+  { href: '/history', label: 'nav.trips', icon: HistoryIcon },
+  { href: '/profile', label: 'nav.profile', icon: UserIcon },
 ];
 
 export function TabNav({ inline = false }: { inline?: boolean }) {
   const path = usePathname();
+  const t = useT();
   return (
     <nav className={inline ? '' : 'fixed inset-x-0 bottom-0 z-[1300] border-t border-line bg-panel/90 backdrop-blur-md shadow-lift'}
       style={inline ? undefined : { paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="mx-auto flex max-w-2xl">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const active = path === t.href || (path === '/' && t.href === '/now');
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = path === tab.href || (path === '/' && tab.href === '/now');
           return (
-            <Link key={t.href} href={t.href}
+            <Link key={tab.href} href={tab.href}
               className="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold tracking-tightish"
               style={{ color: active ? '#2563EB' : '#5B6675' }}>
               {active && <span className="absolute top-0 h-[3px] w-7 -translate-y-px rounded-full bg-signal" />}
               <Icon />
-              {t.label}
+              {t(tab.label)}
             </Link>
           );
         })}

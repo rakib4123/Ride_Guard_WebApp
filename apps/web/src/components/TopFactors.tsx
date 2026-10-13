@@ -1,10 +1,14 @@
+'use client';
+
 import type { RiskFactor } from '@rideguard/shared';
+import { useT } from '@/i18n/LocaleContext';
 
 export function TopFactors({ factors }: { factors: RiskFactor[] }) {
+  const t = useT();
   if (!factors.length) {
     return (
       <p className="text-sm text-muted">
-        No elevated factors right now. Risk reflects the baseline and location.
+        {t('factors.none')}
       </p>
     );
   }
