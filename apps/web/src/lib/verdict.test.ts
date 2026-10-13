@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildVerdict } from '@/lib/verdict';
+import { buildVerdict, buildRouteVerdict, mapCause } from '@/lib/verdict';
 import { DEFAULT_PROFILE, DEFAULT_TOGGLES, type FeatureVector } from '@rideguard/shared';
-import type { ScorePointResponse } from '@rideguard/shared';
+import type { ScorePointResponse, ScoreRouteResponse, RouteSegment } from '@rideguard/shared';
 
 const features = (over: Partial<FeatureVector> = {}): FeatureVector => ({
   ...DEFAULT_PROFILE,
@@ -98,5 +98,51 @@ describe('buildVerdict', () => {
 
   it('surfaces the placeholder flag', () => {
     expect(buildVerdict(result({ isPlaceholder: true }), features()).isPlaceholder).toBe(true);
+  });
+});
+
+const seg = (over: Partial<RouteSegment> = {}): RouteSegment => ({
+  segId: 0, lat: 23.78, lon: 90.4, R: 0.4, level: 'Medium', spatialPrior: 0.2, ...over,
+});
+const route = (over: Partial<ScoreRouteResponse> = {}): ScoreRouteResponse => ({
+  segments: [seg()], meanRisk: 0.42, maxRisk: 0.5, p90Risk: 0.48, routeLevel: 'Medium',
+  behaviourScore: 0.4, topFactors: [], riskiestSegId: 0, isPlaceholder: false,
+  modelVersion: 'test', scorerVersion: 'test', ...over,
+});
+
+describe('buildRouteVerdict', () => {
+  it('reports Unknown with no route, never Low', () => {
+    expect(buildRouteVerdict(null, features()).level).toBe('Unknown');
+  });
+
+  it('takes level and score from the route mean', () => {
+    const v = buildRouteVerdict(route({ meanRisk: 0.42, routeLevel: 'Medium' }), features());
+    expect(v.level).toBe('Medium');
+    expect(v.score).toBe('42');
+  });
+
+  it('names a blackspot if any point on the route passes one', () => {
+    const v = buildRouteVerdict(
+      route({ segments: [seg({ spatialPrior: 0.1 }), seg({ segId: 1, spatialPrior: 0.95 })] }),
+      features(),
+    );
+    expect(v.modelReasons).toContain('reason.blackspot');
+  });
+});
+
+describe('mapCause', () => {
+  it('describes a heavy-history area where the settings matter little', () => {
+    expect(mapCause(result({ spatialPrior: 0.95, behaviourScore: 0.2 })))
+      .toEqual(['map.cause.area.high', 'map.cause.ride.small']);
+  });
+
+  it('describes a quiet area where the settings drive the reading', () => {
+    expect(mapCause(result({ spatialPrior: 0.1, behaviourScore: 0.7 })))
+      .toEqual(['map.cause.area.low', 'map.cause.ride.main']);
+  });
+
+  it('has a middle band for both halves', () => {
+    expect(mapCause(result({ spatialPrior: 0.6, behaviourScore: 0.4 })))
+      .toEqual(['map.cause.area.some', 'map.cause.ride.part']);
   });
 });
