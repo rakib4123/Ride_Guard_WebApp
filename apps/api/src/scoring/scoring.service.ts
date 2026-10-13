@@ -54,6 +54,7 @@ export class ScoringService {
       conformalSet: b.conformalSet,
       isPlaceholder: b.isPlaceholder,
       modelVersion: MODEL_VERSION,
+      scorerVersion: scorerVersion(b),
     };
   }
 
@@ -102,8 +103,15 @@ export class ScoringService {
       riskiestSegId,
       isPlaceholder: b.isPlaceholder,
       modelVersion: MODEL_VERSION,
+      scorerVersion: scorerVersion(b),
     };
   }
+}
+
+/** The scorer's own version; a placeholder result is always reported as 'mock'. */
+function scorerVersion(b: BehaviourResult): string {
+  if (b.isPlaceholder) return 'mock';
+  return b.modelVersion ?? 'unknown';
 }
 
 /** Sample a polyline at a fixed spacing (metres), keeping vertices. */

@@ -21,6 +21,7 @@ const result = (over: Partial<ScorePointResponse> = {}): ScorePointResponse => (
   conformalSet: [],
   isPlaceholder: false,
   modelVersion: 'test',
+  scorerVersion: 'test',
   ...over,
 });
 
@@ -39,12 +40,12 @@ describe('buildVerdict', () => {
   });
 
   it('names a blackspot when the spatial prior is high', () => {
-    const v = buildVerdict(result({ spatialPrior: 0.8 }), features());
+    const v = buildVerdict(result({ spatialPrior: 0.95 }), features());
     expect(v.modelReasons).toContain('reason.blackspot');
   });
 
   it('does not name a blackspot when the prior is low', () => {
-    const v = buildVerdict(result({ spatialPrior: 0.1 }), features());
+    const v = buildVerdict(result({ spatialPrior: 0.6 }), features());
     expect(v.modelReasons).not.toContain('reason.blackspot');
   });
 

@@ -73,6 +73,10 @@ export interface TripLog {
     fused_risk_R: number;
     advisory_level: AdvisoryLevel;
     conformal_set: SeverityClass[];
+    /** True when the mock scored this trip; such trips must not feed validation. */
+    is_placeholder: boolean;
+    /** Model artifact version that scored the trip, or 'mock'. */
+    scorer_version: string;
     top_factors: { name: string; impact: number }[];
     segments: PredictionSegment[];
   };

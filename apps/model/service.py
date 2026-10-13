@@ -102,10 +102,21 @@ def _factors(df: pd.DataFrame, top: int = 4):
         for ci, cname in enumerate(_cls):
             contrib += RISK_W.get(cname, 0.0) * shap[ci, :]
     names = model.feature_names_
-    pairs = [(FACTOR_LABEL.get(names[i], names[i]), float(contrib[i])) for i in range(len(names))]
+    # Name the rider's own value: SHAP says THIS value raised the risk, and a bare
+    # "Phone use while riding" reads as an accusation to a rider who answered "Never".
+    pairs = [(f"{FACTOR_LABEL.get(names[i], names[i])}: {_value_label(names[i], df.iloc[0][names[i]])}",
+              float(contrib[i])) for i in range(len(names))]
     pairs = [p for p in pairs if p[1] > 0]
     pairs.sort(key=lambda x: -x[1])
     return [{"name": n, "impact": round(v, 4)} for n, v in pairs[:top]]
+
+
+def _value_label(name: str, v) -> str:
+    if name == "Biker_Alcohol":
+        return "Yes" if float(v) >= 0.5 else "No"
+    if isinstance(v, (int, float, np.integer, np.floating)):
+        return f"{float(v):g}"
+    return str(v)
 
 
 def _conformal(probs: np.ndarray) -> list[str]:
