@@ -3,8 +3,11 @@ import type { MessageKey } from '@/i18n/messages/en';
 import type { RiskLevel } from '@/lib/riskTokens';
 import { fmt } from '@/lib/fmt';
 
-/** Above this, the location's crash history is worth naming. */
-const BLACKSPOT_PRIOR = 0.5;
+/**
+ * Above this, the location's crash history is worth naming. The prior is a
+ * percentile of crash locations, so 0.9 means the densest 10% of them.
+ */
+const BLACKSPOT_PRIOR = 0.9;
 const MAX_ITEMS = 3;
 
 export interface Verdict {

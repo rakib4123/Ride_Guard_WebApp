@@ -54,3 +54,14 @@ test('percentile: nearest-rank, and empty input is 0 not NaN', () => {
   assert.equal(percentile([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.9), 9);
   assert.equal(percentile([5], 0.9), 5);
 });
+
+test('scorerVersion says which scorer produced the score, and mock is never mislabelled', async () => {
+  const spatial = { prior: () => 0.5 };
+  const base = { score: 0.4, probabilities: {}, factors: [], conformalSet: [] };
+  const real = new ScoringService({ score: () => ({ ...base, isPlaceholder: false, modelVersion: 'tier1-x' }) }, spatial);
+  const mock = new ScoringService({ score: () => ({ ...base, isPlaceholder: true, modelVersion: 'tier1-x' }) }, spatial);
+  const loc = { lat: 23.75, lon: 90.39 };
+  assert.equal((await real.scorePoint({}, loc)).scorerVersion, 'tier1-x');
+  assert.equal((await mock.scorePoint({}, loc)).scorerVersion, 'mock');
+  assert.equal((await mock.scoreRoute({}, [loc, loc])).scorerVersion, 'mock');
+});

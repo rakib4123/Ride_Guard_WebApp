@@ -39,4 +39,4 @@ export const SPATIAL_KERNEL_SIGMA_M = 300;
 
 /** Model + schema versions stamped onto every trip log. */
 export const MODEL_VERSION = 'rideguard-2026-06';
-export const TRIP_SCHEMA_VERSION = '1.0';
+export const TRIP_SCHEMA_VERSION = '1.1';
