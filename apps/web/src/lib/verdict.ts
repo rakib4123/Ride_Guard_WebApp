@@ -1,4 +1,4 @@
-import type { FeatureVector, ScorePointResponse } from '@rideguard/shared';
+import type { FeatureVector, ScorePointResponse, ScoreRouteResponse } from '@rideguard/shared';
 import type { MessageKey } from '@/i18n/messages/en';
 import type { RiskLevel } from '@/lib/riskTokens';
 import { fmt } from '@/lib/fmt';
@@ -45,15 +45,57 @@ export function buildVerdict(
   return {
     level: result.advisoryLevel,
     score: fmt.pct(result.R),
-    modelReasons: collectModelReasons(result, features),
+    modelReasons: collectModelReasons(result.spatialPrior, features),
     watchOuts,
     isPlaceholder: result.isPlaceholder,
   };
 }
 
-function collectModelReasons(r: ScorePointResponse, f: FeatureVector): MessageKey[] {
+/**
+ * The same verdict for a whole route. The level and score come from the
+ * route's mean risk (what the API advises on); a blackspot is named if the
+ * route passes through one anywhere along its length.
+ */
+export function buildRouteVerdict(
+  route: ScoreRouteResponse | null,
+  features: FeatureVector,
+): Verdict {
+  const watchOuts = collectWatchOuts(features);
+  if (!route) {
+    return { level: 'Unknown', score: null, modelReasons: [], watchOuts, isPlaceholder: false };
+  }
+  const worstPrior = route.segments.reduce((m, s) => Math.max(m, s.spatialPrior), 0);
+  return {
+    level: route.routeLevel,
+    score: fmt.pct(route.meanRisk),
+    modelReasons: collectModelReasons(worstPrior, features),
+    watchOuts,
+    isPlaceholder: route.isPlaceholder,
+  };
+}
+
+/**
+ * Plain-language cause for the Map screen (spec section 6): one sentence on the
+ * place, one on how much the rider's own settings matter there. Replaces the
+ * raw Fused R / Spatial pi / Behaviour s readout in the rider view.
+ */
+export function mapCause(r: ScorePointResponse): [MessageKey, MessageKey] {
+  const area: MessageKey =
+    r.spatialPrior >= BLACKSPOT_PRIOR ? 'map.cause.area.high'
+      : r.spatialPrior >= 0.5 ? 'map.cause.area.some'
+        : 'map.cause.area.low';
+  // Same cut points as the advisory bands, applied to the behaviour score
+  // alone: high on its own means the settings drive the reading.
+  const ride: MessageKey =
+    r.behaviourScore >= 0.6 ? 'map.cause.ride.main'
+      : r.behaviourScore >= 0.33 ? 'map.cause.ride.part'
+        : 'map.cause.ride.small';
+  return [area, ride];
+}
+
+function collectModelReasons(spatialPrior: number, f: FeatureVector): MessageKey[] {
   const out: MessageKey[] = [];
-  if (r.spatialPrior >= BLACKSPOT_PRIOR) out.push('reason.blackspot');
+  if (spatialPrior >= BLACKSPOT_PRIOR) out.push('reason.blackspot');
   if (f.Bike_Speed > f.Speed_Limit) out.push('reason.overLimit');
   if (f.Biker_Alcohol === 1) out.push('reason.alcohol');
   if (f.Talk_While_Riding !== 'Never') out.push('reason.phone');
