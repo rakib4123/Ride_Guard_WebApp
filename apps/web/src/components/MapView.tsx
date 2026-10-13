@@ -10,7 +10,14 @@ import {
 import type { Hotspot, LatLon, RouteSegment } from '@rideguard/shared';
 import { riskColor } from '@/lib/format';
 
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+// Since 29 Sep 2026 CARTO serves an "API KEY REQUIRED" image instead of map
+// tiles unless the URL carries ?key=. The key is free for non-commercial use
+// (carto.com/basemaps/apikey); it ships to the browser, so restrict it to this
+// site's domain in the CARTO dashboard.
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_KEY;
+const TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' +
+  (CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : '');
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
