@@ -12,6 +12,7 @@ export class HealthController {
       modelVersion: MODEL_VERSION,
       scorer: process.env.MODEL_SERVICE_URL ? 'tier1-model' : 'placeholder',
       modelService: process.env.MODEL_SERVICE_URL ?? null,
+      liveTraffic: process.env.GOOGLE_MAPS_SERVER_KEY ? 'google' : 'off',
       time: new Date().toISOString(),
     };
   }

@@ -28,6 +28,9 @@ services:
       # must send it as `x-admin-token`. Unset = those endpoints stay disabled.
       - key: ADMIN_TOKEN
         sync: false
+      # Optional Google Routes API key for live traffic. Unset = no Google calls.
+      - key: GOOGLE_MAPS_SERVER_KEY
+        sync: false
 
   - type: web
     name: rideguard-model

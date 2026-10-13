@@ -6,6 +6,7 @@ import type {
   Hotspot,
   CreateTripInput,
   TripLog,
+  TrafficRouteResponse,
 } from '@rideguard/shared';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
@@ -33,4 +34,7 @@ export const api = {
     post<ScoreRouteResponse>('/score/route', { features, path }),
   hotspots: () => get<{ source: string; hotspots: Hotspot[] }>('/hotspots'),
   saveTrip: (trip: CreateTripInput) => post<TripLog>('/trips', trip),
+  health: () => get<{ liveTraffic?: 'google' | 'off' }>('/health'),
+  trafficRoute: (origin: LatLon, destination: LatLon) =>
+    post<TrafficRouteResponse>('/traffic/route', { origin, destination }),
 };
