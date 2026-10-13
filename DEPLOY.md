@@ -74,6 +74,13 @@ The Blueprint already created **rideguard-api**. Set its env vars
   enables `GET /api/trips` and `GET /api/trips/:id`, which return every rider's stored trip;
   callers must send the value as an `x-admin-token` header. While unset, both endpoints
   refuse with 403.
+- `GOOGLE_MAPS_SERVER_KEY` = **optional.** A Google Maps Platform key with the **Routes API**
+  enabled. It turns on the "Check live traffic" button on the Route screen: one Google call
+  per press, using a two-wheeler route with live traffic. Leave it unset and the app keeps its
+  free route and time-of-day traffic guess. The key is used only by the API, never sent to the
+  browser. In Google Cloud, restrict it to the Routes API and set a **daily quota** and a
+  **budget alert**, since the app itself does not cap calls. `…/api/health` shows
+  `"liveTraffic":"google"` when it is active.
 
 Copy the API URL, e.g. `https://rideguard-api.onrender.com`. Check `…/api/health` —
 it should say `"scorer":"tier1-model"` (or `"placeholder"` on the mock).
