@@ -31,6 +31,8 @@ export interface BehaviourResult {
   conformalSet: SeverityClass[];
   /** True when produced by the mock placeholder rather than the real model. */
   isPlaceholder: boolean;
+  /** Version of the model artifact that produced the score (the model service reports it). */
+  modelVersion?: string;
 }
 
 /** Request to score a single point. */
@@ -50,6 +52,8 @@ export interface ScorePointResponse {
   conformalSet: SeverityClass[];
   isPlaceholder: boolean;
   modelVersion: string;
+  /** Which scorer produced behaviourScore: the model artifact version, or 'mock'. */
+  scorerVersion: string;
 }
 
 /** One sampled point along a route. */
@@ -80,6 +84,8 @@ export interface ScoreRouteResponse {
   riskiestSegId: number;
   isPlaceholder: boolean;
   modelVersion: string;
+  /** Which scorer produced behaviourScore: the model artifact version, or 'mock'. */
+  scorerVersion: string;
 }
 
 export interface Hotspot {

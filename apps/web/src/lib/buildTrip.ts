@@ -64,6 +64,8 @@ export function buildTrip(a: BuildArgs): CreateTripInput {
       fused_risk_R: R,
       advisory_level: level,
       conformal_set: a.point?.conformalSet ?? [],
+      is_placeholder: pred?.isPlaceholder ?? true,
+      scorer_version: pred?.scorerVersion ?? 'none',
       top_factors: pred?.topFactors ?? [],
       segments:
         a.route?.segments.map((s) => ({

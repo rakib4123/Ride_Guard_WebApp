@@ -43,6 +43,19 @@ function input(consent) {
   };
 }
 
+test('a malformed trip is refused with a 400, not a crash', async () => {
+  const svc = new TripsService(fakeRepo());
+  for (const strip of [
+    (i) => delete i.prediction.segments,
+    (i) => delete i.outcome.auto_events,
+    (i) => delete i.outcome.incident,
+  ]) {
+    const i = input({ logging: true, raw_gps: false });
+    strip(i);
+    await assert.rejects(() => svc.create(i), (e) => e.getStatus?.() === 400);
+  }
+});
+
 test('a trip without logging consent is rejected', async () => {
   const svc = new TripsService(fakeRepo());
   await assert.rejects(() => svc.create(input({ logging: false, raw_gps: false })), /consent/i);
@@ -136,7 +149,7 @@ test('server-assigned fields are stamped, and each trip gets a unique id', async
   const svc = new TripsService(fakeRepo());
   const a = await svc.create(input({ logging: true, raw_gps: true }));
   const b = await svc.create(input({ logging: true, raw_gps: true }));
-  assert.equal(a.schema_version, '1.0');
+  assert.equal(a.schema_version, '1.1');
   assert.equal(a.model_version, 'rideguard-2026-06');
   assert.notEqual(a.trip_id, b.trip_id);
 });
