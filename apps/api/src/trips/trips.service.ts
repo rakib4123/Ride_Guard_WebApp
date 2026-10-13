@@ -50,6 +50,18 @@ export class TripsService {
       );
     }
 
+    // The DTO only checks these are objects; the stripping below walks the
+    // arrays, so a malformed record must be refused, not crash with a 500.
+    if (
+      !Array.isArray(input.prediction?.segments) ||
+      !Array.isArray(input.outcome?.auto_events) ||
+      typeof input.outcome?.incident !== 'object' || input.outcome.incident === null
+    ) {
+      throw new BadRequestException(
+        'Trip not stored: prediction.segments, outcome.auto_events and outcome.incident are required.',
+      );
+    }
+
     const keepGps = Boolean(input.consent.raw_gps);
 
     const prediction = keepGps

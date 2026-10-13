@@ -1,5 +1,5 @@
 import type { Hotspot, LatLon } from '@rideguard/shared';
-import { SPATIAL_KERNEL_SIGMA_M, FUSION_LAMBDA } from '@rideguard/shared';
+import { FUSION_LAMBDA, makeSpatialPrior } from '@rideguard/shared';
 import { RISK_TOKENS } from '@/lib/riskTokens';
 import { levelFor } from '@/lib/format';
 
@@ -14,17 +14,13 @@ export function distMeters(a: LatLon, b: LatLon): number {
   return 2 * R_EARTH * Math.asin(Math.sqrt(h));
 }
 
-/** Replicates the API's spatial prior (Gaussian kernel over hotspots, sigma=300m). */
+/** The API's spatial prior, built from the same shared code so the two agree. */
+let priorCache: { hotspots: Hotspot[]; fn: (p: LatLon) => number } | null = null;
 export function spatialPriorAt(p: LatLon, hotspots: Hotspot[]): number {
-  if (!hotspots.length) return 0.5;
-  const twoSig = 2 * SPATIAL_KERNEL_SIGMA_M * SPATIAL_KERNEL_SIGMA_M;
-  let max = 0;
-  for (const h of hotspots) {
-    const d = distMeters(p, { lat: h.lat, lon: h.lon });
-    const k = h.normDensity * Math.exp(-(d * d) / twoSig);
-    if (k > max) max = k;
+  if (priorCache?.hotspots !== hotspots) {
+    priorCache = { hotspots, fn: makeSpatialPrior(hotspots) };
   }
-  return Math.max(0, Math.min(1, max));
+  return priorCache.fn(p);
 }
 
 /** Fuse behaviour score s with spatial prior pi: R = clip(s*(1+0.30*(2*pi-1)),0,1). */
