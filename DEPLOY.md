@@ -155,6 +155,9 @@ create index trips_user_created_idx on public.trips (user_id, created_at desc);
      `https://rideguard-api.onrender.com/api`
    - `NEXT_PUBLIC_SUPABASE_URL` = the Project URL from step 3.
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = the anon public key from step 3.
+   - `NEXT_PUBLIC_CARTO_KEY` = a CARTO basemaps key. Without it every map tile shows an
+     "API KEY REQUIRED" watermark. Get one free (non-commercial, up to 5M requests/month) at
+     https://carto.com/basemaps/apikey, and restrict it to your Vercel domain in CARTO's dashboard.
 
    (These are read at build time, so set them before deploying.)
 4. **Deploy.** Copy the resulting site URL, e.g. `https://rideguard.vercel.app`.
