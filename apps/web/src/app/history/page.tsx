@@ -1,21 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Card } from '@/components/Card';
-import { AdvisoryBadge } from '@/components/AdvisoryBadge';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '@/i18n/LocaleContext';
 import { listTrips, deleteTrip, type SavedTrip } from '@/lib/trips';
-import type { AdvisoryLevel } from '@rideguard/shared';
+import { monthSummary } from '@/lib/tripSummary';
+import { MonthSummary } from '@/components/MonthSummary';
+import { TripCard } from '@/components/TripCard';
 
 export default function HistoryPage() {
+  const t = useT();
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     listTrips()
-      .then((t) => setTrips(t))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Could not load trips.'))
+      .then((rows) => setTrips(rows))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,45 +25,31 @@ export default function HistoryPage() {
 
   const remove = async (id: string) => {
     await deleteTrip(id);
-    setTrips((t) => t.filter((x) => x.id !== id));
+    setTrips((rows) => rows.filter((x) => x.id !== id));
   };
+
+  const summary = useMemo(() => monthSummary(trips), [trips]);
 
   return (
     <>
-      <Card title="My trip history">
-        {loading ? (
-          <p className="text-sm text-muted">Loading…</p>
-        ) : error ? (
-          <p className="text-sm text-risk-high">{error}</p>
-        ) : trips.length === 0 ? (
-          <p className="text-sm text-muted">
-            No saved trips yet. On the Now screen, tap “Save to my trips” to keep a record here.
-          </p>
-        ) : (
+      <h1 className="text-lg font-semibold text-text">{t('trips.title')}</h1>
+      {loading ? (
+        <p className="text-sm text-muted">{t('label.checking')}</p>
+      ) : error ? (
+        <p className="text-sm text-risk-high">{t('trips.loadFailed')}</p>
+      ) : trips.length === 0 ? (
+        <p className="text-sm text-muted">{t('trips.empty')}</p>
+      ) : (
+        <>
+          <MonthSummary summary={summary} />
           <ul className="space-y-2">
-            {trips.map((t) => (
-              <li key={t.id} className="flex items-center justify-between rounded-xl border border-line bg-panel2 px-3 py-2.5">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono tabular text-sm text-text">
-                      {t.risk != null ? Math.round(t.risk * 100) : '—'}
-                    </span>
-                    {t.advisory && <AdvisoryBadge level={t.advisory as AdvisoryLevel} />}
-                  </div>
-                  <div className="truncate text-xs text-muted">
-                    {t.data?.locName ?? (t.lat != null ? `${t.lat.toFixed(3)}, ${t.lon?.toFixed(3)}` : '—')}
-                    {' · '}{new Date(t.created_at).toLocaleString()}
-                  </div>
-                </div>
-                <button onClick={() => remove(t.id)}
-                  className="ml-3 shrink-0 rounded-lg border border-line px-2.5 py-1 text-xs text-muted hover:text-risk-high">
-                  Delete
-                </button>
-              </li>
+            {trips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} onDelete={() => remove(trip.id)} />
             ))}
           </ul>
-        )}
-      </Card>
+          <p className="text-center text-xs text-muted">{t('trips.swipeHint')}</p>
+        </>
+      )}
     </>
   );
 }

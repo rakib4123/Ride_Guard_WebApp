@@ -10,4 +10,13 @@ export const fmt = {
   pct: (x: number): string => String(Math.round(clamp01(x) * 100)),
   km: (x: number): string => x.toFixed(1),
   speed: (x: number): string => String(Math.round(x)),
+  /**
+   * Date and time in the rider's language, but always with Western digits:
+   * plain 'bn-BD' formatting would emit Bengali digits, so the latn numbering
+   * system is requested explicitly.
+   */
+  dateTime: (d: Date, locale: 'en' | 'bn'): string =>
+    d.toLocaleString(locale === 'bn' ? 'bn-BD-u-nu-latn' : 'en-GB', {
+      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    }),
 };

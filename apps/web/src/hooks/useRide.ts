@@ -24,11 +24,14 @@ export function useRide() {
   const [speedKmh, setSpeedKmh] = useState(0);
   const [phoneUse, setPhoneUse] = useState(false);
   const [fix, setFix] = useState<LatLon | null>(null);
+  const [distanceKm, setDistanceKm] = useState(0);
 
   const watchId = useRef<number | null>(null);
   const lastInteract = useRef(0);
   const lastPos = useRef<{ lat: number; lon: number; t: number } | null>(null);
   const speedRef = useRef(0);
+  const distM = useRef(0);
+  const distAnchor = useRef<LatLon | null>(null);
 
   useEffect(() => {
     const mark = () => { lastInteract.current = Date.now(); };
@@ -50,15 +53,30 @@ export function useRide() {
   const start = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
     lastInteract.current = 0;
+    distM.current = 0;
+    distAnchor.current = null;
+    setDistanceKm(0);
     watchId.current = navigator.geolocation.watchPosition(
       (p) => {
-        const { latitude: lat, longitude: lon, speed } = p.coords;
+        const { latitude: lat, longitude: lon, speed, accuracy } = p.coords;
         const now = Date.now();
         let kmh = speed != null && !Number.isNaN(speed) ? speed * 3.6 : 0;
         if ((speed == null || Number.isNaN(speed)) && lastPos.current) {
           const d = haversine(lastPos.current, { lat, lon });
           const dt = (now - lastPos.current.t) / 1000;
           if (dt > 0) kmh = (d / dt) * 3.6;
+        }
+        // Distance: only accurate fixes count, and the anchor moves only once
+        // the rider has gone 10 m from it, so GPS jitter while stopped adds
+        // nothing but slow riding still accumulates.
+        if (accuracy <= 50) {
+          if (!distAnchor.current) distAnchor.current = { lat, lon };
+          const d = haversine(distAnchor.current, { lat, lon });
+          if (d >= 10) {
+            distM.current += d;
+            distAnchor.current = { lat, lon };
+            setDistanceKm(distM.current / 1000);
+          }
         }
         lastPos.current = { lat, lon, t: now };
         kmh = Math.max(0, Math.min(160, kmh));
@@ -81,5 +99,5 @@ export function useRide() {
 
   useEffect(() => () => { if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current); }, []);
 
-  return { riding, speedKmh, phoneUse, fix, start, stop };
+  return { riding, speedKmh, phoneUse, fix, distanceKm, start, stop };
 }

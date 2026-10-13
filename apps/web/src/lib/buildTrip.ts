@@ -17,6 +17,7 @@ interface BuildArgs {
   weather: { condition: string; tempC: number; rainMmHr: number };
   consent: { logging: boolean; raw_gps: boolean };
   startTime: string;
+  distanceKm?: number;
 }
 
 /** Assemble a Section-10 trip record from current state + a prediction. */
@@ -38,7 +39,7 @@ export function buildTrip(a: BuildArgs): CreateTripInput {
       end_time: new Date().toISOString(),
       origin: a.origin,
       destination: a.destination,
-      distance_km: 0,
+      distance_km: a.distanceKm ?? 0,
     },
     context: {
       time_of_day: a.features.Time_of_Day,

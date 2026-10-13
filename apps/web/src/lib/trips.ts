@@ -8,7 +8,16 @@ export interface SavedTrip {
   advisory: string | null;
   lat: number | null;
   lon: number | null;
-  data: { features?: FeatureVector; locName?: string } | null;
+  data: {
+    features?: FeatureVector;
+    /** Where the reading was taken (the ride's end when it was a ride). */
+    locName?: string;
+    /** Where the ride started; absent for a single-point reading. */
+    startName?: string;
+    distanceKm?: number;
+    /** Verdict reason keys at save time (MessageKey values). */
+    reasons?: string[];
+  } | null;
 }
 
 /** Save the current score as a trip in the signed-in user's history. */
@@ -17,6 +26,9 @@ export async function saveTripToAccount(args: {
   loc: LatLon;
   features: FeatureVector;
   locName?: string;
+  startName?: string;
+  distanceKm?: number;
+  reasons?: string[];
 }): Promise<void> {
   if (!supabase) throw new Error('Auth is not configured.');
   const { data: auth } = await supabase.auth.getUser();
@@ -28,7 +40,13 @@ export async function saveTripToAccount(args: {
     advisory: args.result.advisoryLevel,
     lat: args.loc.lat,
     lon: args.loc.lon,
-    data: { features: args.features, locName: args.locName },
+    data: {
+      features: args.features,
+      locName: args.locName,
+      startName: args.startName,
+      distanceKm: args.distanceKm,
+      reasons: args.reasons,
+    },
   });
   if (error) throw error;
 }

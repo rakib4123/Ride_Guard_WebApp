@@ -4,6 +4,7 @@ import { Hind_Siliguri, JetBrains_Mono } from 'next/font/google';
 import { LocaleProvider } from '@/i18n/LocaleContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProfileProvider } from '@/context/ProfileContext';
+import { AlertsProvider } from '@/context/AlertsContext';
 import { Shell } from '@/components/Shell';
 
 // Inter and Space Grotesk ship no Bengali glyphs, so Bengali silently fell
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LocaleProvider>
           <AuthProvider>
             <ProfileProvider>
-              <Shell>{children}</Shell>
+              <AlertsProvider>
+                <Shell>{children}</Shell>
+              </AlertsProvider>
             </ProfileProvider>
           </AuthProvider>
         </LocaleProvider>
