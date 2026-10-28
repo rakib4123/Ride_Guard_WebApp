@@ -4,6 +4,8 @@
 now — before and during your trip — on a live map, and warns you out loud about risky moments while
 you ride. It works in your phone's browser, like a lightweight app.
 
+> 🧪 **The model behind it:** research code, benchmarks and the leakage audit are in [RideGuard_V1](https://github.com/rakib4123/RideGuard_V1). Paper presented at **IEEE COMPAS 2026**.
+
 > ⚠️ **Please read:** RideGuard is a **safety guide, not a guarantee.** It points out when to be
 > extra careful, but it can't predict crashes. Always ride to the conditions, follow traffic laws,
 > and wear your gear.
