@@ -40,8 +40,7 @@ SEED = 0
 
 def find_data() -> pathlib.Path:
     names = ["MotorBike_Accident.pkl", "MotorBike_Accident.xlsx"]
-    dirs = [os.environ.get("RIDEGUARD_DATA_DIR",""), "/mnt/user-data/uploads",
-            "/home/claude/results_extract", str(HERE)]
+    dirs = [os.environ.get("RIDEGUARD_DATA_DIR",""), str(HERE)]
     for d in dirs:
         if not d: continue
         for n in names:
