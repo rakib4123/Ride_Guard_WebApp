@@ -27,7 +27,6 @@ body {
 
 /* Map: keep tiles calm so the UI chrome leads */
 .leaflet-container { background: #E6ECF4; font-family: var(--font-body); }
-.leaflet-tile { filter: saturate(0.88) brightness(1.03) contrast(0.98); }
 .leaflet-bar, .leaflet-control-attribution { border-radius: 10px !important; }
 
 .tabular { font-variant-numeric: tabular-nums; }
@@ -43,3 +42,33 @@ button, a, [role="button"] { transition: background-color .18s ease, color .18s 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ------------------------------------------------------------------ map motion */
+/* "You are here": dot + pulse + heading beam (or a navigation arrow while riding). */
+.rg-me-icon { background: none; border: 0; }
+.rg-me { position: relative; width: 96px; height: 96px; pointer-events: none; }
+.rg-me--arrow { width: 48px; height: 48px; filter: drop-shadow(0 2px 4px rgba(11,18,32,.35)); }
+.rg-me-turn { position: absolute; inset: 0; transform-origin: 50% 50%;
+  transition: transform .6s cubic-bezier(.22,1,.36,1), opacity .3s ease; }
+.rg-me-cone { opacity: 0; }
+.rg-me.has-heading .rg-me-cone { opacity: 1; }
+.rg-me-dot, .rg-me-pulse { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px;
+  margin: -9px 0 0 -9px; border-radius: 9999px; }
+.rg-me-dot { background: #2563EB; border: 3px solid #FFFFFF; box-shadow: 0 1px 5px rgba(11,18,32,.38); transition: background-color .3s; }
+.rg-me-pulse { background: rgba(37,99,235,.38); animation: rg-me-pulse 2.2s cubic-bezier(.22,1,.36,1) infinite; }
+@keyframes rg-me-pulse { 0% { transform: scale(1); opacity: .85; } 100% { transform: scale(3.6); opacity: 0; } }
+/* An old fix: grey, no pulse — the position may be out of date. */
+.rg-me.stale .rg-me-dot { background: #94A3B8; }
+.rg-me.stale .rg-me-pulse, .rg-me.stale .rg-me-cone { display: none; }
+
+/* A chosen place drops in. */
+.rg-pin svg { animation: rg-pin-drop .38s cubic-bezier(.22,1,.36,1); transform-origin: 50% 100%; }
+@keyframes rg-pin-drop { 0% { transform: translateY(-22px) scale(.9); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+/* Bottom sheet slide + content fade. */
+@keyframes rg-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rg-fade-up { animation: rg-fade-up .32s cubic-bezier(.22,1,.36,1) both; }
+
+/* Over the limit in ride mode: a slow, unmissable pulse. */
+@keyframes rg-alarm { 0%,100% { box-shadow: 0 0 0 0 rgba(217,45,32,.55); } 50% { box-shadow: 0 0 0 12px rgba(217,45,32,0); } }
+.rg-alarm { animation: rg-alarm 1.2s ease-out infinite; }

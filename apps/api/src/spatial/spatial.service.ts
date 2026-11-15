@@ -1,32 +1,31 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Hotspot, LatLon } from '@rideguard/shared';
+import type { Hotspot, LatLon, SpatialGrid } from '@rideguard/shared';
 import { makeSpatialPrior } from '@rideguard/shared';
 
 const EARTH_RADIUS_M = 6_371_000;
 
 /**
- * Tier-2 spatial prior. Production should query the KDE held by the pipeline
- * (Section 7). Here we approximate it in-process from the hotspot table; see
- * makeSpatialPrior for the definition. pi = 0.5 is the neutral point for
- * fusion (Section 5).
+ * Location prior from the regional crash grids (apps/model/build_spatial.py writes
+ * data/hotspots.json). See makeSpatialPrior for the definition: 0.5 is
+ * neutral, and the layer can raise a reading but never lower it.
  */
 @Injectable()
 export class SpatialService implements OnModuleInit {
   private readonly logger = new Logger(SpatialService.name);
   private hotspots: Hotspot[] = [];
+  private regions: SpatialGrid[] = [];
   private source = 'unloaded';
-  private priorFn: (p: LatLon) => number = makeSpatialPrior([]);
+  private priorFn: (p: LatLon) => number = makeSpatialPrior(null);
 
-  /** Try several locations so it works whether started from apps/api, the repo
-   * root (Render), or the compiled dist folder. */
+  /** Works whether started from apps/api, the repo root (Render), or dist. */
   private resolveDataFile(): string | null {
     const candidates = [
       process.env.HOTSPOTS_FILE,
-      join(__dirname, '..', '..', 'data', 'hotspots.json'), // dist/spatial -> apps/api/data
-      join(process.cwd(), 'data', 'hotspots.json'),         // started from apps/api
-      join(process.cwd(), 'apps', 'api', 'data', 'hotspots.json'), // started from repo root
+      join(__dirname, '..', '..', 'data', 'hotspots.json'),
+      join(process.cwd(), 'data', 'hotspots.json'),
+      join(process.cwd(), 'apps', 'api', 'data', 'hotspots.json'),
     ].filter(Boolean) as string[];
     return candidates.find((p) => existsSync(p)) ?? null;
   }
@@ -37,26 +36,33 @@ export class SpatialService implements OnModuleInit {
       if (!path) throw new Error('hotspots.json not found in any known location');
       const raw = JSON.parse(readFileSync(path, 'utf-8'));
       this.hotspots = raw.hotspots ?? [];
+      // Older single-grid files carry `grid`; current files carry `regions`.
+      this.regions = raw.regions ?? (raw.grid ? [raw.grid] : []);
       this.source = raw.source ?? 'unknown';
-      this.logger.log(
-        `Loaded ${this.hotspots.length} hotspots (source: ${this.source}) from ${path}.`,
-      );
+      for (const r of this.regions) {
+        this.logger.log(`Crash grid ${r.name ?? '(unnamed)'}: ${r.cells.length} cells of ${r.gridM} m, ${r.crashes ?? '?'} crashes.`);
+      }
     } catch (err) {
       this.logger.warn(`Could not load hotspots.json: ${String(err)}`);
       this.hotspots = [];
+      this.regions = [];
     }
-    this.priorFn = makeSpatialPrior(this.hotspots);
+    this.priorFn = makeSpatialPrior(this.regions);
   }
 
   getHotspots(): Hotspot[] {
     return this.hotspots;
   }
 
+  getRegions(): SpatialGrid[] {
+    return this.regions;
+  }
+
   getSource(): string {
     return this.source;
   }
 
-  /** Relative-risk prior pi in [0,1] at a point. */
+  /** Location prior pi in [0.5, 1] at a point. */
   prior(point: LatLon): number {
     return this.priorFn(point);
   }

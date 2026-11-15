@@ -7,6 +7,9 @@ import type {
   CreateTripInput,
   TripLog,
   TrafficRouteResponse,
+  PresenceUpdate,
+  PresenceResponse,
+  SpatialGrid,
 } from '@rideguard/shared';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
@@ -32,9 +35,17 @@ export const api = {
     post<ScorePointResponse>('/score', { features, location }),
   scoreRoute: (features: FeatureVector, path: LatLon[]) =>
     post<ScoreRouteResponse>('/score/route', { features, path }),
-  hotspots: () => get<{ source: string; hotspots: Hotspot[] }>('/hotspots'),
+  hotspots: () => get<HotspotsResponse>('/hotspots'),
   saveTrip: (trip: CreateTripInput) => post<TripLog>('/trips', trip),
   health: () => get<{ liveTraffic?: 'google' | 'off' }>('/health'),
   trafficRoute: (origin: LatLon, destination: LatLon) =>
     post<TrafficRouteResponse>('/traffic/route', { origin, destination }),
+  presence: (u: PresenceUpdate) => post<PresenceResponse>('/presence', u),
 };
+
+export interface HotspotsResponse {
+  source: string;
+  hotspots: Hotspot[];
+  /** One crash grid per region (Dhaka, Great Britain, New York City, ...). */
+  regions: SpatialGrid[];
+}

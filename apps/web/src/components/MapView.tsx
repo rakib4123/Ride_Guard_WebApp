@@ -11,14 +11,18 @@ import type { Hotspot, LatLon, RouteSegment } from '@rideguard/shared';
 import { riskColor } from '@/lib/format';
 import { RISK_TOKENS } from '@/lib/riskTokens';
 import { distMeters } from '@/lib/roadrisk';
+import { prefersReducedMotion } from '@/lib/motion';
+import { FollowMe, UserMarker, type MarkerFix } from '@/components/map/UserMarker';
 
 // Since 29 Sep 2026 CARTO serves an "API KEY REQUIRED" image instead of map
 // tiles unless the URL carries ?key=. The key is free for non-commercial use
 // (carto.com/basemaps/apikey); it ships to the browser, so restrict it to this
 // site's domain in the CARTO dashboard.
 const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_KEY;
+// "Voyager": a colourful street map with clear road hierarchy, easier to read
+// at a glance than the pale light_all style.
 const TILE_URL =
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png' +
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png' +
   (CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : '');
 const TILE_ATTR =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -38,11 +42,17 @@ function pin(color: string, label?: string) {
   });
 }
 
-function Recenter({ center, zoom }: { center: [number, number]; zoom?: number }) {
+/** Glide to a new centre (a searched or tapped place) instead of jumping. */
+function Recenter({ center, zoom, enabled = true }: { center: [number, number]; zoom?: number; enabled?: boolean }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, zoom ?? map.getZoom());
-  }, [center[0], center[1], zoom]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!enabled) return;
+    const c = map.getCenter();
+    const far = map.distance(c, center) > 3_000;
+    if (prefersReducedMotion()) map.setView(center, zoom ?? map.getZoom());
+    else if (far) map.flyTo(center, zoom ?? Math.max(map.getZoom(), 15), { duration: 0.9 });
+    else map.panTo(center, { animate: true, duration: 0.6 });
+  }, [center[0], center[1], zoom, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
@@ -61,11 +71,15 @@ function ClickToSet({ onSet }: { onSet: (loc: LatLon) => void }) {
  * precision the data does not have. Three stacked translucent rings fade out
  * from the centre; strength is the hotspot's crash-count rank.
  */
+/** Blooms drawn: the busiest cells. Three circles each, so keep phones fast. */
+const MAX_BLOOMS = 200;
+
 function HotspotBlooms({ hotspots }: { hotspots: Hotspot[] }) {
   const ranked = useMemo(() => {
-    const counts = hotspots.map((h) => h.count).sort((a, b) => a - b);
+    const top = [...hotspots].sort((a, b) => b.count - a.count).slice(0, MAX_BLOOMS);
+    const counts = top.map((h) => h.count).sort((a, b) => a - b);
     const rank = (c: number) => (counts.length > 1 ? counts.indexOf(c) / (counts.length - 1) : 1);
-    return hotspots.map((h) => ({ h, strength: rank(h.count) }));
+    return top.map((h) => ({ h, strength: rank(h.count) }));
   }, [hotspots]);
   const color = RISK_TOKENS.High.surface;
   return (
@@ -102,6 +116,7 @@ function RiskRoadsLayer({ roads }: { roads: { points: [number, number][]; color:
  */
 export function PointPickerMap({
   value, onChange, level, hotspots = [], riskRoads = [], zoomControl = true,
+  me = null, follow = false, onUserPan, showPin = true,
 }: {
   value: LatLon;
   onChange: (loc: LatLon) => void;
@@ -109,17 +124,27 @@ export function PointPickerMap({
   hotspots?: Hotspot[];
   riskRoads?: { points: [number, number][]; color: string }[];
   zoomControl?: boolean;
+  /** The rider's live position (blue dot). */
+  me?: MarkerFix | null;
+  /** Keep the map on `me`; the first drag calls onUserPan. */
+  follow?: boolean;
+  onUserPan?: () => void;
+  /** Show the pin for `value` (off while the reading is simply "where I am"). */
+  showPin?: boolean;
 }) {
   const color = level ? riskColor[level] : '#2563EB';
   const [k] = useState(() => `pt-${Math.random().toString(36).slice(2)}`);
   return (
-    <MapContainer key={k} center={[value.lat, value.lon]} zoom={14} className="h-full w-full" scrollWheelZoom zoomControl={zoomControl}>
+    <MapContainer key={k} center={[value.lat, value.lon]} zoom={15} className="h-full w-full" scrollWheelZoom
+      zoomControl={zoomControl} attributionControl={false} zoomAnimation fadeAnimation markerZoomAnimation>
       <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
       <HotspotBlooms hotspots={hotspots} />
       <RiskRoadsLayer roads={riskRoads} />
       <ClickToSet onSet={onChange} />
-      <Recenter center={[value.lat, value.lon]} />
-      <Marker
+      <Recenter center={[value.lat, value.lon]} enabled={!follow} />
+      <FollowMe target={me} follow={follow} onUserPan={onUserPan} />
+      <UserMarker fix={me} />
+      {showPin && <Marker
         position={[value.lat, value.lon]}
         draggable
         icon={pin(color)}
@@ -129,7 +154,7 @@ export function PointPickerMap({
             onChange({ lat: p.lat, lon: p.lng });
           },
         }}
-      />
+      />}
     </MapContainer>
   );
 }
@@ -138,18 +163,21 @@ export function PointPickerMap({
  * Non-interactive map that follows the rider, for ride mode's dimmed
  * background. Nothing on it can be tapped: the rider should not be using it.
  */
-export function BackdropMap({ center, riskRoads = [] }: {
+export function BackdropMap({ center, riskRoads = [], me = null }: {
   center: LatLon;
   riskRoads?: { points: [number, number][]; color: string }[];
+  /** The rider, drawn as a navigation arrow the map follows. */
+  me?: MarkerFix | null;
 }) {
   const [k] = useState(() => `bd-${Math.random().toString(36).slice(2)}`);
   return (
-    <MapContainer key={k} center={[center.lat, center.lon]} zoom={16} className="h-full w-full"
+    <MapContainer key={k} center={[center.lat, center.lon]} zoom={17} className="h-full w-full"
       zoomControl={false} dragging={false} scrollWheelZoom={false} doubleClickZoom={false}
       touchZoom={false} keyboard={false} boxZoom={false} attributionControl={false}>
       <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
       <RiskRoadsLayer roads={riskRoads} />
-      <Recenter center={[center.lat, center.lon]} />
+      {me ? <FollowMe target={me} follow zoom={17} /> : <Recenter center={[center.lat, center.lon]} />}
+      <UserMarker fix={me} variant="arrow" />
     </MapContainer>
   );
 }
@@ -162,7 +190,7 @@ export function BackdropMap({ center, riskRoads = [] }: {
  */
 export function RoutePickerMap({
   origin, dest, onOriginChange, onDestChange, segments = [], riskiestSegId = 0,
-  riskiestLabel, alternatives = [], onSelectAlternative, zoomControl = true,
+  riskiestLabel, alternatives = [], onSelectAlternative, zoomControl = true, me = null,
 }: {
   origin: LatLon;
   dest: LatLon;
@@ -175,6 +203,7 @@ export function RoutePickerMap({
   alternatives?: { index: number; points: LatLon[] }[];
   onSelectAlternative?: (index: number) => void;
   zoomControl?: boolean;
+  me?: MarkerFix | null;
 }) {
   const mid: [number, number] = segments.length
     ? [segments[Math.floor(segments.length / 2)].lat, segments[Math.floor(segments.length / 2)].lon]
@@ -185,10 +214,12 @@ export function RoutePickerMap({
   const riskiest = segments.find((s) => s.segId === riskiestSegId);
 
   return (
-    <MapContainer key={k} center={mid} zoom={12} className="h-full w-full" scrollWheelZoom zoomControl={zoomControl}>
+    <MapContainer key={k} center={mid} zoom={12} className="h-full w-full" scrollWheelZoom
+      zoomControl={zoomControl} attributionControl={false}>
       <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
       <ClickToSet onSet={moveNearest} />
       <Recenter center={mid} />
+      <UserMarker fix={me} />
 
       {alternatives.map((a) => (
         <Polyline key={`alt-${a.index}`} positions={a.points.map((p) => [p.lat, p.lon] as [number, number])}

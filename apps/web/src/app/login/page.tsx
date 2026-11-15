@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { Card } from '@/components/Card';
+import { nextPath } from '@/lib/nav';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
     setBusy(false);
     if (error) setErr(error.message);
-    else router.replace('/now');
+    else router.replace(nextPath());
   };
 
   return (
@@ -44,6 +45,9 @@ export default function LoginPage() {
       <p className="mt-4 text-center text-sm text-muted">
         New here? <Link href="/signup" className="font-medium text-signal">Create an account</Link>
       </p>
+      <Link href="/now" className="mt-2 flex min-h-11 items-center justify-center text-sm font-medium text-muted underline-offset-2 hover:underline">
+        Continue as guest
+      </Link>
     </Card>
   );
 }

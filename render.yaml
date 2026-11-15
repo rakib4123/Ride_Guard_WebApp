@@ -28,6 +28,9 @@ services:
       # must send it as `x-admin-token`. Unset = those endpoints stay disabled.
       - key: ADMIN_TOKEN
         sync: false
+      # Shared secret with the model service (same value on both services).
+      - key: MODEL_SERVICE_TOKEN
+        sync: false
       # Optional Google Routes API key for live traffic. Unset = no Google calls.
       - key: GOOGLE_MAPS_SERVER_KEY
         sync: false
@@ -44,3 +47,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"
+      # Same value as on rideguard-api; unset = the model accepts any caller.
+      - key: MODEL_SERVICE_TOKEN
+        sync: false

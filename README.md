@@ -23,13 +23,13 @@ up — just wait and refresh once.
 
 ## How to use it
 
-### 1. Sign in
-Create an account with your email and a password (this lets RideGuard save your profile and your
-trips). After that you're taken straight to the map.
+### 1. Open it — no account needed
+Use RideGuard straight away as a guest. Sign in (email and password) only if you want to save your
+rides and see them later on the **Trips** screen.
 
-### 2. Set your rider profile (once)
-Tap the **account button** (top-right) → **Rider profile**. Fill in details like your age and riding
-experience, then **Save**. You only do this once — it's remembered for next time.
+### 2. Nothing to fill in
+RideGuard asks you nothing about yourself. Your speed, the speed limit, the road, the weather,
+the time and the traffic are all measured by your phone.
 
 ### 3. The four screens (bottom bar)
 
@@ -47,7 +47,7 @@ you — by sound, voice, and vibration — when it matters:
 
 - 📵 you're touching your phone while moving,
 - 🚀 you're going over the speed limit,
-- ⚠️ you're entering a known high-risk area.
+- ⚠️ you're entering a known crash blackspot.
 
 Tap **Stop ride** when you're done. You can save the ride to **Trips** to review later.
 
@@ -61,6 +61,9 @@ Tap **Stop ride** when you're done. You can save the ride to **Trips** to review
 - **Allow location** when your browser asks — that's how the map follows you and reads your speed.
 - **Allow sound** (tap Start ride from a tap, not in silent mode) so voice and beep alerts work.
 - The **Sound / Voice / Buzz** toggles on the Now screen let you turn each alert type on or off.
+- **People around you** (Profile): switch on sharing to count other RideGuard riders near you,
+  and Bluetooth scanning (Android Chrome with *Experimental Web Platform features* on in
+  `chrome://flags`) to count other phones. Phones on the same bus count as one.
 - **Add it to your home screen** (your browser's "Add to Home Screen") to open it like a normal app.
 
 ---

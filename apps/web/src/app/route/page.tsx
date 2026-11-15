@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLon, ScoreRouteResponse, TrafficRouteResponse } from '@rideguard/shared';
-import { useProfile } from '@/context/ProfileContext';
+import { useConditions } from '@/context/ConditionsContext';
 import { useT } from '@/i18n/LocaleContext';
 import { fill } from '@/i18n/fill';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -20,6 +20,7 @@ import { RoutePicker, type RouteOption } from '@/components/RoutePicker';
 import { TopFactors } from '@/components/TopFactors';
 import { LocationSearch } from '@/components/LocationSearch';
 import { MapScreen } from '@/components/MapScreen';
+import { useMe } from '@/context/LocationContext';
 
 const RoutePickerMap = dynamic(
   () => import('@/components/MapView').then((m) => m.RoutePickerMap),
@@ -41,7 +42,13 @@ function rankInputs(routes: RoutePath[], scored: (ScoreRouteResponse | null)[]) 
 }
 
 export default function RoutePage() {
-  const { features } = useProfile();
+  const { features: live } = useConditions();
+  const { me } = useMe();
+  // Planning a route: score it ridden at the limit, hands off the phone.
+  const features = useMemo(
+    () => ({ ...live, Bike_Speed: live.Speed_Limit, Talk_While_Riding: 'Never' as const }),
+    [live],
+  );
   const t = useT();
   const [origin, setOrigin] = useState<LatLon>(DEFAULT_ORIGIN);
   const [dest, setDest] = useState<LatLon>(DEFAULT_DEST);
@@ -158,12 +165,13 @@ export default function RoutePage() {
           alternatives={routes.map((r, index) => ({ index, points: r.points })).filter((a) => a.index !== selected && !routes[a.index].fallback)}
           onSelectAlternative={setSelected}
           zoomControl={false}
+          me={me ? { lat: me.lat, lon: me.lon, accuracyM: me.accuracyM, headingDeg: me.headingDeg } : null}
         />
       }
       top={
-        <div className="space-y-1.5 rounded-2xl border border-line bg-white/95 p-2 shadow-soft backdrop-blur">
-          <LocationSearch placeholder={t('route.from')} onSelect={(l) => setOrigin(l)} />
-          <LocationSearch placeholder={t('route.to')} onSelect={(l) => setDest(l)} />
+        <div className="space-y-1.5 rounded-3xl bg-white/95 p-2 shadow-lift backdrop-blur">
+          <LocationSearch variant="inline" placeholder={t('route.from')} near={origin} onSelect={(l) => setOrigin(l)} />
+          <LocationSearch variant="inline" placeholder={t('route.to')} near={dest} onSelect={(l) => setDest(l)} />
           <p className="px-1 text-xs text-muted">{t('route.tapHint')}</p>
         </div>
       }

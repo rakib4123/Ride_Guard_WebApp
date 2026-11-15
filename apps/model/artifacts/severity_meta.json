@@ -1,0 +1,63 @@
+{
+  "model_version": "rideguard-severity-uk-2026-11",
+  "question": "P(rider killed or seriously injured | motorcycle crash happens)",
+  "source": "UK STATS19 (Department for Transport), Open Government Licence v3.0",
+  "inputs": [
+    "Speed_Limit",
+    "Is_Dark",
+    "Weather",
+    "Road_condition",
+    "Area",
+    "Time_of_Day"
+  ],
+  "train": {
+    "year": 2022,
+    "riders": 15859,
+    "ksi_share": 0.343
+  },
+  "test": {
+    "year": 2023,
+    "riders": 15321,
+    "ksi_share": 0.3462,
+    "auc": 0.6843,
+    "brier": 0.2048,
+    "brier_base_rate_only": 0.2264,
+    "brier_skill": 0.0954,
+    "calibration_quintiles": [
+      {
+        "predicted": 0.123,
+        "observed": 0.126,
+        "n": 1680
+      },
+      {
+        "predicted": 0.227,
+        "observed": 0.23,
+        "n": 3970
+      },
+      {
+        "predicted": 0.299,
+        "observed": 0.325,
+        "n": 983
+      },
+      {
+        "predicted": 0.339,
+        "observed": 0.357,
+        "n": 4917
+      },
+      {
+        "predicted": 0.566,
+        "observed": 0.559,
+        "n": 3771
+      }
+    ]
+  },
+  "examples_ksi": {
+    "30 mph, town, daylight, dry": 0.32,
+    "30 mph, town, dark, rain": 0.279,
+    "60 mph, rural, daylight, dry": 0.584,
+    "60 mph, rural, dark": 0.667
+  },
+  "validated_in": [
+    "GB"
+  ]
+}

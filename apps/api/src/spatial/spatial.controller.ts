@@ -8,11 +8,12 @@ export class SpatialController {
   constructor(private readonly spatial: SpatialService) {}
 
   @Get()
-  @ApiOkResponse({ description: 'Dhaka hotspot points for the map heat layer.' })
+  @ApiOkResponse({ description: 'Crash grids per region, and the busiest cells for the map.' })
   getHotspots() {
     return {
       source: this.spatial.getSource(),
       hotspots: this.spatial.getHotspots(),
+      regions: this.spatial.getRegions(),
     };
   }
 }

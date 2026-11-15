@@ -1,4 +1,4 @@
-import type { AdvisoryLevel } from '@rideguard/shared';
+import { ADVISORY_THRESHOLDS, type AdvisoryLevel } from '@rideguard/shared';
 import { RISK_TOKENS } from '@/lib/riskTokens';
 
 export const riskColor: Record<AdvisoryLevel, string> = {
@@ -8,8 +8,8 @@ export const riskColor: Record<AdvisoryLevel, string> = {
 };
 
 export function levelFor(R: number): AdvisoryLevel {
-  if (R < 0.33) return 'Low';
-  if (R < 0.6) return 'Medium';
+  if (R < ADVISORY_THRESHOLDS.medium) return 'Low';
+  if (R < ADVISORY_THRESHOLDS.high) return 'Medium';
   return 'High';
 }
 

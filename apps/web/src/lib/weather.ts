@@ -16,13 +16,15 @@ export interface WeatherNow {
   condition: Weather;
   tempC: number;
   rainMmHr: number;
+  /** After sunset / before sunrise at this location. */
+  isDark: boolean;
 }
 
 /** Free, keyless current weather from Open-Meteo (Handoff Section 3). */
 export async function fetchWeather(lat: number, lon: number): Promise<WeatherNow> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&current=temperature_2m,precipitation,weather_code`;
+    `&current=temperature_2m,precipitation,weather_code,is_day`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('weather fetch failed');
   const data = await res.json();
@@ -31,6 +33,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherNow
     condition: codeToWeather(Number(c.weather_code ?? 0)),
     tempC: Number(c.temperature_2m ?? NaN),
     rainMmHr: Number(c.precipitation ?? 0),
+    isDark: c.is_day === 0,
   };
 }
 

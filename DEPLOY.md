@@ -9,9 +9,9 @@ Four pieces:
 | `apps/model` (FastAPI) | **Render** | the trained Tier-1 model |
 | auth + user data | **Supabase** | sign-in, rider profiles, saved trips |
 
-> **Supabase is not optional.** The app redirects every unauthenticated visitor
-> to `/login`, so without it you get a site nobody can get past. Set it up in
-> step 3 below.
+> **Guests need no account.** Everyone can use the app without signing in.
+> Supabase (step 3) is what lets riders sign in to save rides and see them on
+> the Trips screen; without it the app still works, but nobody can save trips.
 
 The browser also calls OpenStreetMap (tiles, search, routing) and Open-Meteo directly —
 those need no setup.
@@ -74,6 +74,8 @@ The Blueprint already created **rideguard-api**. Set its env vars
   enables `GET /api/trips` and `GET /api/trips/:id`, which return every rider's stored trip;
   callers must send the value as an `x-admin-token` header. While unset, both endpoints
   refuse with 403.
+- `MODEL_SERVICE_TOKEN` = a long random secret (`openssl rand -hex 32`). Set the **same value**
+  on `rideguard-model`, so the model service refuses anyone but the API.
 - `GOOGLE_MAPS_SERVER_KEY` = **optional.** A Google Maps Platform key with the **Routes API**
   enabled. It turns on the "Check live traffic" button on the Route screen: one Google call
   per press, using a two-wheeler route with live traffic. Leave it unset and the app keeps its
@@ -195,6 +197,10 @@ Open your Vercel URL and check:
   `curl -H "x-admin-token: $ADMIN_TOKEN" https://<api>/api/trips`. Riders who declined the
   "Include my GPS trail" consent have every coordinate zeroed — trace, origin, destination and
   incident point — so those records carry risk values and context only.
+- **People around you (D2D):** `POST /api/presence` holds riders' anonymous positions in
+  memory for 20 s and never stores them. It runs on one API instance; with several instances,
+  move it to a shared store (e.g. Redis) or riders on different instances won't see each other.
+- **Retraining:** see `apps/model/README.md` (`train.py`, then `build_spatial.py`).
 - **Swagger** (`/api/docs`) is served outside production only. To expose it on Render, set
   `ENABLE_API_DOCS=true`.
 - **Model cold starts:** the API waits `MODEL_TIMEOUT_MS` (default 30s) and retries once, so

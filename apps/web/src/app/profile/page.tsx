@@ -1,28 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useProfile } from '@/context/ProfileContext';
 import { useLocale } from '@/i18n/LocaleContext';
 import { Card } from '@/components/Card';
-import { ProfilePanel } from '@/components/ProfilePanel';
+import { CrowdSettingsPanel } from '@/components/CrowdSettingsPanel';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { AlertSettings } from '@/components/AlertSettings';
 
-/** Profile (spec 7.2): Alerts, Language, Rider profile, limits, then Account. */
+/** Profile: Alerts, People around you, Language, limits, then Account. Nothing here feeds the score. */
 export default function ProfilePage() {
   const { locale, t } = useLocale();
   const { user, configured, signOut } = useAuth();
-  const { saveProfile } = useProfile();
-  const [savedNote, setSavedNote] = useState(false);
-
-  const onSaveProfile = async () => {
-    await saveProfile();
-    setSavedNote(true);
-    setTimeout(() => setSavedNote(false), 3000);
-  };
-
   return (
     <>
       <Card title={t('profile.alerts')}>
@@ -30,20 +19,16 @@ export default function ProfilePage() {
         <AlertSettings />
       </Card>
 
+      <Card title={t('crowd.title')}>
+        <p className="mb-3 text-sm text-muted">{t('crowd.help')}</p>
+        <CrowdSettingsPanel />
+      </Card>
+
       {/* Always both words, so a rider in the wrong language can find this. */}
       <Card title={locale === 'bn' ? 'ভাষা · Language' : 'Language · ভাষা'}>
         <LanguageToggle />
       </Card>
 
-      <Card title={t('profile.rider')}>
-        <p className="mb-3 text-sm text-muted">{t('profile.riderHelp')}</p>
-        <ProfilePanel />
-        <button onClick={onSaveProfile}
-          className="mt-3 flex min-h-11 w-full items-center justify-center rounded-xl bg-signal text-sm font-semibold text-white shadow-soft">
-          {t('common.save')}
-        </button>
-        {savedNote && <p className="mt-2 text-xs text-risk-low" role="status">{t('profile.saved')}</p>}
-      </Card>
 
       {/* A standing caution, not a buried link. */}
       <section className="rounded-xl2 border border-risk-med/40 bg-risk-med/10 p-4">

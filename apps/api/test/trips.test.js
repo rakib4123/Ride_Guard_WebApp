@@ -28,7 +28,7 @@ function input(consent) {
     app_version: '1.0.0',
     consent,
     trip: { start_time: 'a', end_time: 'b', origin: { ...ORIGIN }, destination: { ...DEST }, distance_km: 12.4 },
-    context: { time_of_day: 'Morning', day_of_week: 'Thursday', weather: {}, rider: {} },
+    context: { time_of_day: 'Morning', day_of_week: 'Thursday', weather: {}, measured: {} },
     prediction: {
       behaviour_score: 0.15, spatial_prior: 1, fused_risk_R: 0.195, advisory_level: 'Low',
       conformal_set: [], top_factors: [],
@@ -149,7 +149,7 @@ test('server-assigned fields are stamped, and each trip gets a unique id', async
   const svc = new TripsService(fakeRepo());
   const a = await svc.create(input({ logging: true, raw_gps: true }));
   const b = await svc.create(input({ logging: true, raw_gps: true }));
-  assert.equal(a.schema_version, '1.1');
-  assert.equal(a.model_version, 'rideguard-2026-06');
+  assert.equal(a.schema_version, '2.0');
+  assert.equal(a.model_version, 'rideguard-2026-11');
   assert.notEqual(a.trip_id, b.trip_id);
 });

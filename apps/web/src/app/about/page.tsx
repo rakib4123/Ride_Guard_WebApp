@@ -1,57 +1,76 @@
 'use client';
 
 import { Card } from '@/components/Card';
-import { SHAP_GLOBAL } from '@/lib/shap';
+
+/** Average score points (of 100) each measured factor added on the test set. */
+const FACTOR_POINTS: { label: string; value: number }[] = [
+  { label: 'Over the speed limit', value: 22.54 },
+  { label: 'Phone use while riding', value: 12.09 },
+  { label: 'Heavy traffic', value: 3.54 },
+  { label: 'Rain or fog', value: 0.31 },
+  { label: 'Wet road', value: 0.15 },
+  { label: 'Riding in the dark', value: 0.05 },
+];
 
 export default function AboutPage() {
-  const max = Math.max(...SHAP_GLOBAL.map((s) => s.value));
+  const max = Math.max(...FACTOR_POINTS.map((s) => s.value));
   return (
     <>
       <Card title="What RideGuard is">
         <p className="text-sm leading-relaxed text-text">
-          RideGuard is a riding-safety <strong>advisory and data-collection tool</strong> for
-          motorcyclists in Dhaka. It combines a behavioural risk score with a map of where
-          incidents have historically clustered, and shows a single risk reading before and
-          during a trip.
+          RideGuard is a riding-safety <strong>advisory</strong> for motorcyclists. It combines a
+          risk score from what your phone measures with maps of where motorcycle crashes have been
+          recorded (Dhaka, Great Britain and New York City so far), and shows one reading before and
+          during a ride.
+        </p>
+      </Card>
+
+      <Card title="You are asked nothing">
+        <p className="text-sm leading-relaxed text-muted">
+          The score uses only what the phone measures: <span className="text-text">GPS speed, the
+          posted speed limit, touching the screen while moving, weather, road surface, time of day,
+          road type and traffic</span>. Helmet, alcohol and other habits can&apos;t be measured by a
+          phone, so they are left out rather than guessed.
         </p>
       </Card>
 
       <Card title="The numbers, honestly">
         <ul className="space-y-2 text-sm leading-relaxed text-muted">
           <li>
-            The behavioural model reports ~0.97 test accuracy — but in the source data every
-            feature combination maps to exactly one label, so that figure largely reflects
-            <span className="text-text"> memorising a deterministic table</span>, not predicting
-            real crashes.
+            Trained on all 15,100 rows of the Mendeley motorbike dataset. On held-out data it
+            classifies severity with <span className="text-text">0.62 macro-F1</span>, its
+            probabilities are calibrated (error 0.04), and its 90% plausible-outcome sets hold the
+            true outcome 94% of the time.
           </li>
           <li>
-            On a pre-crash-only, leakage-controlled target, macro-F1 for severity drops to
-            <span className="text-text"> ~0.23</span>. That gap is the honest measure of how
-            little proven predictive signal there is today.
+            The model is <span className="text-text">constrained</span>: going faster, touching the
+            phone, rain, a wet road, darkness and traffic can only raise the risk, never lower it.
+            Without that rule it scored higher (0.82) but read +20 km/h as safer for many riders,
+            because the training data contains such backwards patterns. The posted limit counts only
+            through how far you are over it: on its own it had learned that a 50 km/h road is
+            riskier than a 60 km/h one even at 30 km/h, a quirk of the data.
           </li>
           <li>
-            Instead of a single confident class, the engine returns a conformal
-            <span className="text-text"> set</span> of plausible severities with ~90%
-            coverage, and escalates caution when unsure.
+            The training data holds almost no signal for rain, wet roads or darkness, so those add
+            little to the score. RideGuard still tells you to watch out for them.
           </li>
           <li>
-            The spatial layer is a <span className="text-text">relative</span> prior (253
-            severity-weighted clusters + KDE), never a probability — it can modulate caution
-            but cannot manufacture risk it has no exposure data for.
+            No crash model is exact. This is a guide to when to take extra care, not a prediction
+            that a crash will or won&apos;t happen.
           </li>
         </ul>
       </Card>
 
-      <Card title="What the model leans on">
+      <Card title="What raises the score">
         <p className="mb-3 text-xs text-muted">
-          Real global feature importance (mean |SHAP|) from the trained pipeline.
+          Average score points (out of 100) each factor added on the test set.
         </p>
         <ul className="space-y-2">
-          {SHAP_GLOBAL.map((s) => (
-            <li key={s.feature}>
+          {FACTOR_POINTS.map((s) => (
+            <li key={s.label}>
               <div className="mb-1 flex items-baseline justify-between">
                 <span className="text-sm text-text">{s.label}</span>
-                <span className="font-mono tabular text-xs text-muted">{s.value.toFixed(2)}</span>
+                <span className="font-mono tabular text-xs text-muted">+{s.value.toFixed(1)}</span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
                 <div className="h-full rounded-full bg-signal" style={{ width: `${(s.value / max) * 100}%` }} />
@@ -61,57 +80,63 @@ export default function AboutPage() {
         </ul>
       </Card>
 
-      <Card title="How the score works">
-        <ol className="space-y-2 text-sm leading-relaxed text-muted">
-          <li>
-            <span className="text-text">Behaviour (s).</span> Your profile and trip conditions
-            give three calibrated class probabilities, collapsed to s = 0·P(None) +
-            0.5·P(Moderate) + 1·P(Severe).
-          </li>
-          <li>
-            <span className="text-text">Place (π).</span> Your location is compared against
-            historical incident density to get a relative spatial prior in [0,1].
-          </li>
-          <li>
-            <span className="text-text">Fusion (R).</span> R = clip(s · (1 + 0.30·(2π − 1)), 0, 1),
-            banded into Low / Medium / High.
-          </li>
-        </ol>
-        <p className="mt-3 text-xs text-signal">
-          When the Tier-1 model service is running, scores come from the real trained
-          model (CatBoost + isotonic calibration + conformal sets) and the placeholder
-          badge disappears. Without it, the app falls back to a transparent mock, clearly
-          marked on the gauge.
+      <Card title="Where crashes happen">
+        <p className="mb-2 text-sm leading-relaxed text-muted">
+          Each region uses its own motorcycle crashes, counted per 250 m area and checked on later
+          years it was not built from. Within 5% of each region&apos;s crash area, the busiest
+          places held:
+        </p>
+        <ul className="space-y-1 text-sm text-muted">
+          <li><span className="text-text">Dhaka</span> — 33% of later crashes (39,397 crashes, Mendeley, 2007–2021; locations are geocoded place names)</li>
+          <li><span className="text-text">Great Britain</span> — 10% (32,950 crashes, Department for Transport STATS19, 2022–2023)</li>
+          <li><span className="text-text">New York City</span> — 14% (17,491 crashes, NYC Open Data, 2020–2025)</li>
+        </ul>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          A recorded crash area can raise your reading by up to 30%. A spot with no record, or a
+          place outside these regions, leaves it unchanged: missing records are not evidence of safety.
         </p>
       </Card>
 
-      <Card title="What it senses while you ride">
+      <Card title="How bad, if a crash happens">
+        <p className="text-sm leading-relaxed text-muted">
+          A second model, trained on 15,859 motorcyclist casualties in UK police records (2022) and
+          checked on all 15,321 from 2023, estimates the chance of death or serious injury if a crash
+          happened: from about <span className="text-text">32%</span> on a 30 mph town road in
+          daylight to <span className="text-text">67%</span> on a 60 mph rural road in the dark
+          (AUC 0.68, well calibrated). It uses the speed limit, darkness, weather, road surface, town
+          or countryside, and time of day. Outside Britain it is shown as not yet checked for that
+          country.
+        </p>
+      </Card>
+
+      <Card title="People around you">
         <ul className="space-y-2 text-sm leading-relaxed text-muted">
-          <li><span className="text-text">Captured automatically:</span> speed (GPS), location,
-            road type and speed limit (from the map), weather, road surface (from the weather),
-            time of day, and a traffic estimate.</li>
-          <li><span className="text-text">Live alerts:</span> phone use while moving, going over
-            the speed limit, and entering a high-risk area — by banner, sound, vibration, or voice.</li>
-          <li><span className="text-text">Assumed safe defaults:</span> helmet, alcohol, licence and
-            bike condition. A web app on a phone genuinely can't sense these, so RideGuard assumes
-            the safe case rather than guessing.</li>
-          <li><span className="text-text">Phone-use detection</span> means the screen is being
-            touched while you're moving — the honest, achievable signal a browser can read.</li>
+          <li><span className="text-text">Other RideGuard riders:</span> while you ride, if you
+            switch it on, your phone shares an anonymous position with the server for a few seconds
+            at a time. Nothing is stored and the id changes every 10 minutes.</li>
+          <li><span className="text-text">Other phones:</span> where the browser can scan Bluetooth
+            (Android Chrome with an experimental setting), nearby advertising devices are counted.</li>
+          <li><span className="text-text">One bus is one group:</span> phones that move together, or
+            arrive and fade together, are counted once. Your own earbuds and a pillion phone are
+            left out.</li>
+          <li>Most people carry no detectable phone, so the count is a lower bound. It can only raise
+            the traffic estimate, never lower it.</li>
         </ul>
       </Card>
 
       <Card title="Your data">
         <p className="text-sm leading-relaxed text-muted">
-          Trips are logged only with your explicit consent. Your rider id is hashed before
-          storage, and you can leave out your raw GPS trace. The trip log exists so the
-          framework can eventually be validated against real outcomes — the honest next step
-          before anyone should rely on it.
+          Research trip logs are sent only with your consent, your rider id is hashed before
+          storage, and you can leave out your GPS trail. To work, the app sends your location to
+          OpenStreetMap (place names, roads), Open-Meteo (weather) and CARTO (map tiles). Crash
+          data: Department for Transport STATS19 (Open Government Licence v3.0), NYC Open Data,
+          and Mendeley Data.
         </p>
       </Card>
 
       <p className="px-1 text-center text-xs text-muted">
         Maps &amp; search: OpenStreetMap · routing: OSRM · weather: Open-Meteo · model
-        rideguard-2026-06
+        rideguard-live-2026-11
       </p>
     </>
   );

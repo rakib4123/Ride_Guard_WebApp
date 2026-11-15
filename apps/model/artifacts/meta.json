@@ -1,158 +1,134 @@
 {
+  "model_version": "rideguard-live-2026-11",
+  "inputs": [
+    "Bike_Speed",
+    "Speed_Limit",
+    "Talk_While_Riding",
+    "Weather",
+    "Road_condition",
+    "Time_of_Day",
+    "Road_Type",
+    "Traffic_Density"
+  ],
   "labels": [
     "No Accident",
     "Moderate Accident",
     "Severe Accident"
   ],
-  "risk_weights": {
-    "No Accident": 0.0,
-    "Moderate Accident": 0.5,
-    "Severe Accident": 1.0
-  },
-  "cat_cols": [
-    "Biker_Occupation",
-    "Biker_Education_Level",
-    "Talk_While_Riding",
-    "Smoke_While_Riding",
-    "Wearing_Helmet",
-    "Motorcycle_Ownership",
-    "Valid_Driving_License",
-    "Bike_Condition",
-    "Road_Type",
-    "Road_condition",
-    "Weather",
-    "Time_of_Day"
-  ],
-  "numeric_cols": [
-    "Biker_Age",
-    "Riding_Experience",
-    "Daily_Travel_Distance",
-    "Traffic_Density",
-    "Speed_Limit",
-    "Bike_Speed",
-    "Biker_Alcohol"
-  ],
-  "feature_order": [
-    "Biker_Age",
-    "Biker_Occupation",
-    "Biker_Education_Level",
-    "Riding_Experience",
-    "Daily_Travel_Distance",
-    "Talk_While_Riding",
-    "Smoke_While_Riding",
-    "Wearing_Helmet",
-    "Motorcycle_Ownership",
-    "Valid_Driving_License",
-    "Bike_Condition",
-    "Road_Type",
-    "Road_condition",
-    "Weather",
-    "Time_of_Day",
-    "Traffic_Density",
-    "Speed_Limit",
-    "Bike_Speed",
-    "Biker_Alcohol"
-  ],
   "alpha": 0.1,
-  "qhat": 0.08605427759253836,
-  "metrics": {
-    "test_accuracy": 0.9715,
-    "test_macro_f1": 0.9718,
-    "ece_uncalibrated": 0.0429,
-    "ece_calibrated": 0.0076,
-    "conformal_coverage": 0.895,
-    "conformal_avg_set_size": 1.0,
-    "conformal_target": 0.9
-  },
-  "domains": {
-    "Biker_Occupation": [
-      "Business",
-      "Others",
-      "Service",
-      "Student"
-    ],
-    "Biker_Education_Level": [
-      "Above high school",
-      "High school",
-      "Less than high school"
-    ],
-    "Talk_While_Riding": [
-      "Never",
-      "Regularly",
-      "Sometimes"
-    ],
-    "Smoke_While_Riding": [
-      "Never",
-      "Regularly",
-      "Sometimes"
-    ],
-    "Wearing_Helmet": [
-      "No",
-      "Yes"
-    ],
-    "Motorcycle_Ownership": [
-      "Bought with own money",
-      "Inherited"
-    ],
-    "Valid_Driving_License": [
-      "No",
-      "Yes"
-    ],
-    "Bike_Condition": [
-      "New",
-      "Old"
-    ],
-    "Road_Type": [
-      "City Road",
-      "Highway",
-      "Village Road"
-    ],
-    "Road_condition": [
-      "Dry",
-      "Wet"
-    ],
-    "Weather": [
-      "Clear",
-      "Foggy",
-      "Rainy"
-    ],
-    "Time_of_Day": [
-      "Afternoon",
-      "Evening",
-      "Morning",
-      "Night",
-      "Noon"
-    ]
-  },
-  "numeric_ranges": {
-    "Biker_Age": [
-      15.0,
-      70.0
-    ],
-    "Riding_Experience": [
-      0.0,
-      30.0
-    ],
-    "Daily_Travel_Distance": [
-      0.0,
-      150.0
-    ],
-    "Traffic_Density": [
-      1.0,
-      8.0
+  "ranges": {
+    "Bike_Speed": [
+      20,
+      120
     ],
     "Speed_Limit": [
-      40.0,
-      80.0
+      40,
+      80
     ],
-    "Bike_Speed": [
-      20.0,
-      120.0
-    ],
-    "Biker_Alcohol": [
-      0.0,
-      1.0
+    "Traffic_Density": [
+      1,
+      8
     ]
   },
-  "model_version": "rideguard-tier1-2026-06"
+  "data": {
+    "file": "MotorBike_Accident.xlsx",
+    "rows": 15100,
+    "splits": {
+      "train": 8304,
+      "calibration": 2266,
+      "conformal": 2264,
+      "test": 2266
+    }
+  },
+  "metrics": {
+    "test": {
+      "macro_f1": 0.6238,
+      "accuracy": 0.62,
+      "ece": 0.0406,
+      "brier": 0.4804,
+      "conformal_coverage": 0.9378,
+      "conformal_avg_set_size": 2.0552
+    },
+    "test_unconstrained_same_inputs": {
+      "macro_f1": 0.8189,
+      "accuracy": 0.8191,
+      "ece": 0.0164,
+      "brier": 0.2602,
+      "conformal_coverage": 0.8972,
+      "conformal_avg_set_size": 1.2193
+    },
+    "stress_test": [
+      {
+        "scenario": "speed +20 km/h",
+        "mean_change": 0.0773,
+        "pct_rows_risk_fell": 0.0
+      },
+      {
+        "scenario": "phone use",
+        "mean_change": 0.2636,
+        "pct_rows_risk_fell": 0.0
+      },
+      {
+        "scenario": "rain (from clear)",
+        "mean_change": 0.0031,
+        "pct_rows_risk_fell": 0.0
+      },
+      {
+        "scenario": "wet road",
+        "mean_change": 0.0055,
+        "pct_rows_risk_fell": 0.0
+      },
+      {
+        "scenario": "night",
+        "mean_change": 0.0028,
+        "pct_rows_risk_fell": 0.0
+      },
+      {
+        "scenario": "traffic +2",
+        "mean_change": 0.0587,
+        "pct_rows_risk_fell": 0.0
+      }
+    ],
+    "stress_test_unconstrained": [
+      {
+        "scenario": "speed +20 km/h",
+        "mean_change": -0.0348,
+        "pct_rows_risk_fell": 49.45
+      },
+      {
+        "scenario": "phone use",
+        "mean_change": 0.2105,
+        "pct_rows_risk_fell": 8.35
+      },
+      {
+        "scenario": "rain (from clear)",
+        "mean_change": -0.0064,
+        "pct_rows_risk_fell": 15.3
+      },
+      {
+        "scenario": "wet road",
+        "mean_change": -0.0133,
+        "pct_rows_risk_fell": 28.5
+      },
+      {
+        "scenario": "night",
+        "mean_change": -0.0231,
+        "pct_rows_risk_fell": 43.25
+      },
+      {
+        "scenario": "traffic +2",
+        "mean_change": 0.047,
+        "pct_rows_risk_fell": 15.4
+      }
+    ],
+    "mean_factor_points": {
+      "overLimit": 22.54,
+      "phone": 12.09,
+      "traffic": 3.54,
+      "weather": 0.31,
+      "wet": 0.15,
+      "dark": 0.05
+    }
+  },
+  "qhat": 0.7806841046277666
 }
