@@ -2,29 +2,28 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LatLon } from '@rideguard/shared';
+import { distMeters } from '@/lib/roadrisk';
 
-const R = 6_371_000;
-function haversine(a: LatLon, b: LatLon): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon);
-  const h = Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.asin(Math.sqrt(h));
+/** A GPS fix as the ride sees it. */
+export interface RideFix extends LatLon {
+  /** Degrees from north, or null when the phone does not know (stationary). */
+  headingDeg: number | null;
+  accuracyM: number;
 }
 
 /**
  * Live ride sensing. While active it tracks GPS position + speed and flags
- * "phone use while moving" — i.e. the screen is being touched while the bike is
- * moving faster than ~10 km/h. A browser can't see the throttle or whether you
- * physically hold a phone, so this interaction-while-moving signal is the
- * honest, achievable proxy.
+ * "phone use while moving" — the screen being touched while the bike moves
+ * faster than ~10 km/h. A browser can't see whether you physically hold the
+ * phone, so interaction-while-moving is the honest, achievable signal.
  */
 export function useRide() {
   const [riding, setRiding] = useState(false);
   const [speedKmh, setSpeedKmh] = useState(0);
   const [phoneUse, setPhoneUse] = useState(false);
-  const [fix, setFix] = useState<LatLon | null>(null);
+  const [fix, setFix] = useState<RideFix | null>(null);
   const [distanceKm, setDistanceKm] = useState(0);
+  const [startedAt, setStartedAt] = useState(0);
 
   const watchId = useRef<number | null>(null);
   const lastInteract = useRef(0);
@@ -32,6 +31,8 @@ export function useRide() {
   const speedRef = useRef(0);
   const distM = useRef(0);
   const distAnchor = useRef<LatLon | null>(null);
+  /** Accurate positions over the last minute, for "how far did I move". */
+  const recent = useRef<{ t: number; p: LatLon }[]>([]);
 
   useEffect(() => {
     const mark = () => { lastInteract.current = Date.now(); };
@@ -44,25 +45,35 @@ export function useRide() {
     if (!riding) { setPhoneUse(false); return; }
     const id = window.setInterval(() => {
       const moving = speedRef.current > 10;
-      const recent = Date.now() - lastInteract.current < 3000;
-      setPhoneUse(moving && recent);
+      const touched = Date.now() - lastInteract.current < 3000;
+      setPhoneUse(moving && touched);
     }, 1500);
     return () => window.clearInterval(id);
   }, [riding]);
+
+  /** Metres moved over the last minute (path length through accurate fixes). */
+  const movedLastMinuteM = useCallback((): number => {
+    const pts = recent.current;
+    let m = 0;
+    for (let i = 1; i < pts.length; i++) m += distMeters(pts[i - 1].p, pts[i].p);
+    return m;
+  }, []);
 
   const start = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
     lastInteract.current = 0;
     distM.current = 0;
     distAnchor.current = null;
+    recent.current = [];
     setDistanceKm(0);
+    setStartedAt(Date.now());
     watchId.current = navigator.geolocation.watchPosition(
       (p) => {
-        const { latitude: lat, longitude: lon, speed, accuracy } = p.coords;
+        const { latitude: lat, longitude: lon, speed, accuracy, heading } = p.coords;
         const now = Date.now();
         let kmh = speed != null && !Number.isNaN(speed) ? speed * 3.6 : 0;
         if ((speed == null || Number.isNaN(speed)) && lastPos.current) {
-          const d = haversine(lastPos.current, { lat, lon });
+          const d = distMeters(lastPos.current, { lat, lon });
           const dt = (now - lastPos.current.t) / 1000;
           if (dt > 0) kmh = (d / dt) * 3.6;
         }
@@ -71,18 +82,23 @@ export function useRide() {
         // nothing but slow riding still accumulates.
         if (accuracy <= 50) {
           if (!distAnchor.current) distAnchor.current = { lat, lon };
-          const d = haversine(distAnchor.current, { lat, lon });
+          const d = distMeters(distAnchor.current, { lat, lon });
           if (d >= 10) {
             distM.current += d;
             distAnchor.current = { lat, lon };
             setDistanceKm(distM.current / 1000);
           }
+          recent.current.push({ t: now, p: { lat, lon } });
+          while (recent.current.length && now - recent.current[0].t > 60_000) recent.current.shift();
         }
         lastPos.current = { lat, lon, t: now };
         kmh = Math.max(0, Math.min(160, kmh));
         speedRef.current = kmh;
         setSpeedKmh(Math.round(kmh));
-        setFix({ lat, lon });
+        setFix({
+          lat, lon, accuracyM: accuracy,
+          headingDeg: heading != null && !Number.isNaN(heading) && kmh > 3 ? heading : null,
+        });
       },
       () => { /* keep last known */ },
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 },
@@ -94,10 +110,10 @@ export function useRide() {
     if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
     watchId.current = null;
     setRiding(false); setSpeedKmh(0); setPhoneUse(false);
-    lastPos.current = null; speedRef.current = 0;
+    lastPos.current = null; speedRef.current = 0; recent.current = [];
   }, []);
 
   useEffect(() => () => { if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current); }, []);
 
-  return { riding, speedKmh, phoneUse, fix, distanceKm, start, stop };
+  return { riding, speedKmh, phoneUse, fix, distanceKm, startedAt, movedLastMinuteM, start, stop };
 }

@@ -52,9 +52,12 @@ export class HttpScorer implements BehaviourScorer {
   }
 
   private async request(features: FeatureVector): Promise<BehaviourResult> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    // Shared secret so the model service can refuse callers other than this API.
+    if (process.env.MODEL_SERVICE_TOKEN) headers['x-service-token'] = process.env.MODEL_SERVICE_TOKEN;
     const res = await fetch(`${this.url}/behaviour-score`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(features),
       signal: AbortSignal.timeout(this.timeoutMs),
     });

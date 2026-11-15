@@ -55,6 +55,41 @@ test('percentile: nearest-rank, and empty input is 0 not NaN', () => {
   assert.equal(percentile([5], 0.9), 5);
 });
 
+test('route scoring refuses an over-long path instead of sampling it', async () => {
+  const svc = new ScoringService({ score: () => ({ score: 0.2, probabilities: {}, factors: [], conformalSet: [], isPlaceholder: true }) }, { prior: () => 0.5 });
+  await assert.rejects(
+    () => svc.scoreRoute({}, [{ lat: -80, lon: -170 }, { lat: 80, lon: 170 }]),
+    (e) => e.getStatus?.() === 400,
+  );
+  const ok = await svc.scoreRoute({}, [{ lat: 23.78, lon: 90.40 }, { lat: 23.80, lon: 90.41 }]);
+  assert.ok(ok.segments.length > 10);
+});
+
+test('the mock scorer raises risk for measured dangers and names them', () => {
+  const { MockScorer } = require('../dist/behaviour/mock.scorer');
+  const m = new MockScorer();
+  const base = { Bike_Speed: 35, Speed_Limit: 40, Talk_While_Riding: 'Never', Weather: 'Clear',
+    Road_condition: 'Dry', Time_of_Day: 'Afternoon', Road_Type: 'City Road', Traffic_Density: 4 };
+  const calm = m.score(base);
+  const fast = m.score({ ...base, Bike_Speed: 80 });
+  const phone = m.score({ ...base, Talk_While_Riding: 'Regularly' });
+  assert.ok(fast.score > calm.score && phone.score > calm.score);
+  assert.equal(fast.factors[0].id, 'overLimit');
+  assert.equal(phone.factors[0].id, 'phone');
+  assert.equal(calm.isPlaceholder, true);
+});
+
+test('severity passes through from the real model, never from a placeholder', async () => {
+  const spatial = { prior: () => 0.5 };
+  const sev = { ksi: 0.58, source: 'UK STATS19', validatedIn: ['GB'], modelVersion: 'sev-x' };
+  const base = { score: 0.3, probabilities: {}, factors: [], conformalSet: [], severity: sev };
+  const loc = { lat: 51.5, lon: -0.12 };
+  const real = new ScoringService({ score: () => ({ ...base, isPlaceholder: false }) }, spatial);
+  const mock = new ScoringService({ score: () => ({ ...base, isPlaceholder: true }) }, spatial);
+  assert.deepEqual((await real.scorePoint({}, loc)).severity, sev);
+  assert.equal((await mock.scorePoint({}, loc)).severity, null);
+});
+
 test('scorerVersion says which scorer produced the score, and mock is never mislabelled', async () => {
   const spatial = { prior: () => 0.5 };
   const base = { score: 0.4, probabilities: {}, factors: [], conformalSet: [] };

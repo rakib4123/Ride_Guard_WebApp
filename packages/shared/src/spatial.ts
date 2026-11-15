@@ -1,84 +1,102 @@
-import { SPATIAL_KERNEL_SIGMA_M } from './constants';
-import type { Hotspot, LatLon } from './scoring';
+import type { LatLon } from './scoring';
 
-const EARTH_RADIUS_M = 6_371_000;
+const M_PER_DEG = 111_320;
 
-/** Beyond this distance from the outermost hotspot there is no crash data. */
-const COVERAGE_MARGIN_M = 1_000;
-
-/**
- * Builds the Tier-2 spatial prior pi(l) in [0,1] from the hotspot table.
- *
- * pi is a relative-risk PERCENTILE, matching the pipeline's corrected prior
- * (RideGuard_V1/src/tier2_v2.py): the share of recorded crashes that occurred
- * at places less crash-dense than l. The median crash location scores 0.5, the
- * fusion rule's neutral point, so the spatial term raises and lowers risk in
- * equal measure where riders actually ride.
- *
- * Density is a crash-count-weighted Gaussian kernel over hotspot centres. It is
- * weighted by `count`, not `normDensity`: the latter is built from the dataset's
- * Accident_Intensity field, which the project's audit found to be independent of
- * the recorded casualties.
- *
- * Outside the area the crash data covers, pi is 0.5: no data is not evidence of
- * safety, so it must not discount the rider's risk.
- */
-export function makeSpatialPrior(hotspots: Hotspot[]): (p: LatLon) => number {
-  if (hotspots.length === 0) return () => 0.5;
-
-  const twoSigmaSq = 2 * SPATIAL_KERNEL_SIGMA_M * SPATIAL_KERNEL_SIGMA_M;
-  const density = (p: LatLon): number => {
-    let sum = 0;
-    for (const h of hotspots) {
-      const d = haversine(p, h);
-      sum += h.count * Math.exp(-(d * d) / twoSigmaSq);
-    }
-    return sum;
-  };
-
-  // Reference distribution: density at each hotspot centre, weighted by the
-  // crashes it holds, i.e. the density seen at recorded crash locations.
-  const ref = hotspots
-    .map((h) => ({ d: density(h), w: h.count }))
-    .sort((a, b) => a.d - b.d);
-  const total = ref.reduce((s, r) => s + r.w, 0);
-  const cum: number[] = [];
-  let acc = 0;
-  for (const r of ref) cum.push((acc += r.w));
-
-  const latPad = COVERAGE_MARGIN_M / 111_320;
-  const lats = hotspots.map((h) => h.lat);
-  const lons = hotspots.map((h) => h.lon);
-  const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-  const lonPad = latPad / Math.cos((midLat * Math.PI) / 180);
-  const box = {
-    minLat: Math.min(...lats) - latPad, maxLat: Math.max(...lats) + latPad,
-    minLon: Math.min(...lons) - lonPad, maxLon: Math.max(...lons) + lonPad,
-  };
-
-  return (p: LatLon): number => {
-    if (p.lat < box.minLat || p.lat > box.maxLat || p.lon < box.minLon || p.lon > box.maxLon) {
-      return 0.5;
-    }
-    const d = density(p);
-    // Weight of reference entries with density <= d (binary search).
-    let lo = 0;
-    let hi = ref.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (ref[mid].d <= d) lo = mid + 1;
-      else hi = mid;
-    }
-    return lo === 0 ? 0 : cum[lo - 1] / total;
-  };
+/** One grid cell of the location layer (apps/model/build_spatial.py). */
+export interface GridCell {
+  i: number;
+  j: number;
+  /** Motorcycle-involved crashes recorded in this cell. */
+  count: number;
 }
 
-function haversine(a: LatLon, b: LatLon): number {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLon = toRad(b.lon - a.lon);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
-  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
+export interface BBox {
+  minLat: number;
+  maxLat: number;
+  minLon: number;
+  maxLon: number;
+}
+
+/** One region's crash grid (apps/model/build_spatial.py). */
+export interface SpatialGrid {
+  gridM: number;
+  /** Reference latitude for the longitude scale. */
+  lat0: number;
+  cells: GridCell[];
+  /** Region metadata; a grid without a bbox covers everywhere it has cells. */
+  id?: string;
+  name?: string;
+  /** ISO 3166-1 alpha-2. */
+  country?: string;
+  bbox?: BBox;
+  /** Data credit to show with the layer. */
+  credit?: string;
+  years?: string;
+  crashes?: number;
+}
+
+/** The region whose box contains a point, if any. */
+export function regionAt<T extends { bbox?: BBox }>(regions: T[], p: LatLon): T | null {
+  for (const r of regions) {
+    const b = r.bbox;
+    if (!b || (p.lat >= b.minLat && p.lat <= b.maxLat && p.lon >= b.minLon && p.lon <= b.maxLon)) return r;
+  }
+  return null;
+}
+
+/** Grid index of a point. Must match cell_ij() in build_spatial.py. */
+export function cellIndex(p: LatLon, gridM: number, lat0: number): [number, number] {
+  return [
+    Math.floor((p.lat * M_PER_DEG) / gridM),
+    Math.floor((p.lon * M_PER_DEG * Math.cos((lat0 * Math.PI) / 180)) / gridM),
+  ];
+}
+
+/**
+ * The location prior pi(l) in [0.5, 1], from one grid or one grid per region.
+ *
+ * Built from motorcycle crash counts per cell, the cell size chosen per region
+ * by a check on later years (apps/model/build_spatial.py). In a cell with
+ * recorded crashes, pi = 0.5 + 0.5 x the share of crashes that happened in
+ * less crash-dense cells (mid-rank), so the city's densest cells approach 1.
+ *
+ * Anywhere without recorded crashes, and outside every region, pi is 0.5, the
+ * fusion rule's neutral point. Crash records are incomplete (and Dhaka's are
+ * geocoded place names, not GPS fixes), so a cell without a record is not
+ * evidence that it is safe: the location layer can raise a reading, never
+ * lower it.
+ */
+export function makeSpatialPrior(
+  layer: SpatialGrid | SpatialGrid[] | null | undefined,
+): (p: LatLon) => number {
+  const grids = (Array.isArray(layer) ? layer : layer ? [layer] : []).filter((g) => g.cells.length);
+  if (grids.length === 0) return () => 0.5;
+  if (grids.length === 1 && !grids[0].bbox) return gridPrior(grids[0]);
+  // Several regions: score a point with the grid of the region it is in.
+  const fns = grids.map((g) => ({ bbox: g.bbox, fn: gridPrior(g) }));
+  return (p: LatLon) => regionAt(fns, p)?.fn(p) ?? 0.5;
+}
+
+function gridPrior(grid: SpatialGrid): (p: LatLon) => number {
+
+  const total = grid.cells.reduce((s, c) => s + c.count, 0);
+  // Weight of crashes in cells with a lower count, plus half of those tied.
+  const byCount = new Map<number, number>();
+  for (const c of grid.cells) byCount.set(c.count, (byCount.get(c.count) ?? 0) + c.count);
+  const levels = [...byCount.keys()].sort((a, b) => a - b);
+  const pct = new Map<number, number>();
+  let below = 0;
+  for (const n of levels) {
+    const tied = byCount.get(n) as number;
+    pct.set(n, (below + tied / 2) / total);
+    below += tied;
+  }
+
+  const lookup = new Map<string, number>();
+  for (const c of grid.cells) lookup.set(`${c.i}_${c.j}`, 0.5 + 0.5 * (pct.get(c.count) as number));
+
+  return (p: LatLon): number => {
+    const [i, j] = cellIndex(p, grid.gridM, grid.lat0);
+    return lookup.get(`${i}_${j}`) ?? 0.5;
+  };
 }

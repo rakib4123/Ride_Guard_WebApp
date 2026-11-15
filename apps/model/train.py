@@ -1,141 +1,177 @@
 """
-Train the real RideGuard Tier-1 behavioural model from the Mendeley bike dataset,
-following the published pipeline exactly (tier1_behavioral.py / calibration.py /
-conformal.py), and save deployable artifacts the FastAPI service loads.
+Train the RideGuard live-risk model (see rideguard_model.py for the design).
 
-Recipe (verbatim from the repo):
-  - 19 gated pre-crash features (config/feature_gate.yaml), target Accident_Severity
-  - 60/20/20 train/calibration/test split, stratified, seed 0
-  - CatBoost MultiClass (iterations=400, depth=6, lr=0.06, seed 0)
-  - per-class isotonic calibration on the calibration split
-  - APS split-conformal (alpha=0.10) on the calibration split
-  - ordinal risk score s = P @ [0, 0.5, 1]
+Data: the Mendeley motorbike dataset (MotorBike_Accident.xlsx, all 15,100 rows).
+Only the 8 inputs the phone measures are used; no rider questions.
 
-Usage:  RIDEGUARD_DATA_DIR=/path/with/MotorBike_Accident.(pkl|xlsx) python train.py
+Splits (stratified, seed 0), each used for exactly one job:
+    55% train  ->  15% isotonic calibration  ->  15% conformal  ->  15% test
+
+Usage:
+    RIDEGUARD_DATA_DIR=/path/to/risk_dataset python train.py
+(defaults to ../../../risk_dataset relative to this file)
 """
 from __future__ import annotations
-import json, os, pathlib
+
+import json
+import os
+import pathlib
+
 import numpy as np
 import pandas as pd
-import joblib
-from sklearn.model_selection import train_test_split
-from sklearn.isotonic import IsotonicRegression
-from sklearn.metrics import accuracy_score, f1_score
-from catboost import CatBoostClassifier, Pool
+from catboost import CatBoostClassifier
+
+from rideguard_model import (LABELS, MONOTONE, RAW_FEATURES, LiveModel, encode,
+                             fit_isotonic)
 
 HERE = pathlib.Path(__file__).resolve().parent
 ART = HERE / "artifacts"
-ART.mkdir(exist_ok=True)
+SEED, ALPHA = 0, 0.10
+MODEL_VERSION = "rideguard-live-2026-11"
 
-ALLOWED = ["Biker_Age","Biker_Occupation","Biker_Education_Level","Riding_Experience",
-    "Daily_Travel_Distance","Talk_While_Riding","Smoke_While_Riding","Wearing_Helmet",
-    "Motorcycle_Ownership","Valid_Driving_License","Bike_Condition","Road_Type",
-    "Road_condition","Weather","Time_of_Day","Traffic_Density","Speed_Limit",
-    "Bike_Speed","Biker_Alcohol"]
-TARGET = "Accident_Severity"
-LABELS = ["No Accident", "Moderate Accident", "Severe Accident"]
-RISK_W = {"No Accident": 0.0, "Moderate Accident": 0.5, "Severe Accident": 1.0}
-ALPHA = 0.10
-SEED = 0
 
 def find_data() -> pathlib.Path:
-    names = ["MotorBike_Accident.pkl", "MotorBike_Accident.xlsx"]
-    dirs = [os.environ.get("RIDEGUARD_DATA_DIR",""), "/mnt/user-data/uploads",
-            "/home/claude/results_extract", str(HERE)]
-    for d in dirs:
-        if not d: continue
-        for n in names:
-            p = pathlib.Path(d)/n
-            if p.exists(): return p
-    raise FileNotFoundError(f"MotorBike_Accident.(pkl|xlsx) not found in {dirs}")
+    dirs = [os.environ.get("RIDEGUARD_DATA_DIR", ""), str(HERE.parents[2] / "risk_dataset"), str(HERE)]
+    for d in filter(None, dirs):
+        p = pathlib.Path(d) / "MotorBike_Accident.xlsx"
+        if p.exists():
+            return p
+    raise FileNotFoundError(f"MotorBike_Accident.xlsx not found in {dirs}")
 
-def load():
-    p = find_data()
-    df = pd.read_pickle(p) if p.suffix==".pkl" else pd.read_excel(p)
-    df = df.loc[:, ~df.columns.str.contains("Unnamed|ENCODING", regex=True)]
-    X = df[ALLOWED].copy()
-    isnum = pd.api.types.is_numeric_dtype
-    cat_cols = [c for c in ALLOWED if not isnum(X[c])]
-    for c in cat_cols:
-        X[c] = X[c].astype(object)
-    y = df[TARGET].astype(str)
-    return X, y, cat_cols
 
-def onehot(idx, k):
-    o = np.zeros((len(idx), k)); o[np.arange(len(idx)), idx] = 1; return o
+def split(y: np.ndarray, fracs=(0.55, 0.15, 0.15, 0.15)) -> list[np.ndarray]:
+    """Stratified split into index arrays."""
+    rng = np.random.default_rng(SEED)
+    parts: list[list[int]] = [[] for _ in fracs]
+    edges = np.cumsum(fracs)[:-1]
+    for k in np.unique(y):
+        ids = np.flatnonzero(y == k)
+        rng.shuffle(ids)
+        for i, chunk in enumerate(np.split(ids, (edges * len(ids)).astype(int))):
+            parts[i].extend(chunk.tolist())
+    return [np.array(sorted(p)) for p in parts]
 
-def ece(y_oh, proba, n_bins=10):
-    conf = proba.max(1); pred = proba.argmax(1); true = y_oh.argmax(1)
-    correct = (pred==true).astype(float); bins = np.linspace(0,1,n_bins+1); e=0.0
-    for lo,hi in zip(bins[:-1],bins[1:]):
-        m=(conf>lo)&(conf<=hi)
-        if m.sum(): e += m.mean()*abs(correct[m].mean()-conf[m].mean())
-    return float(e)
 
-def main():
-    X, y, cat_cols = load()
-    print(f"loaded {len(X)} rows, {len(cat_cols)} categorical cols")
-    Xtr,Xtmp,ytr,ytmp = train_test_split(X,y,test_size=0.4,stratify=y,random_state=SEED)
-    Xcal,Xte,ycal,yte = train_test_split(Xtmp,ytmp,test_size=0.5,stratify=ytmp,random_state=SEED)
+def fit_binary(X: pd.DataFrame, t: np.ndarray, monotone: bool) -> CatBoostClassifier:
+    m = CatBoostClassifier(iterations=500, depth=6, learning_rate=0.06, loss_function="Logloss",
+                           random_seed=SEED, verbose=False,
+                           **({"monotone_constraints": MONOTONE} if monotone else {}))
+    m.fit(X, t)
+    return m
 
-    model = CatBoostClassifier(iterations=400, depth=6, learning_rate=0.06,
-        loss_function="MultiClass", random_seed=SEED, verbose=False)
-    model.fit(Xtr, ytr, cat_features=cat_cols)
-    cls = list(model.classes_); idx = [cls.index(c) for c in LABELS]
 
-    # per-class isotonic on calibration split
-    p_cal = model.predict_proba(Xcal)[:, idx]
-    ycal_oh = onehot(np.array([LABELS.index(v) for v in ycal]), len(LABELS))
-    isos=[]
-    for j in range(len(LABELS)):
-        iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1)
-        iso.fit(p_cal[:, j], ycal_oh[:, j]); isos.append(iso)
+def macro_f1(yt: np.ndarray, yp: np.ndarray) -> float:
+    f = []
+    for k in range(3):
+        tp = ((yp == k) & (yt == k)).sum()
+        fp = ((yp == k) & (yt != k)).sum()
+        fn = ((yp != k) & (yt == k)).sum()
+        f.append(2 * tp / max(2 * tp + fp + fn, 1))
+    return float(np.mean(f))
 
-    def calibrated(Xdf):
-        raw = model.predict_proba(Xdf)[:, idx]
-        cal = np.column_stack([isos[j].predict(raw[:, j]) for j in range(len(LABELS))])
-        cal = np.clip(cal, 1e-6, None)
-        return cal / cal.sum(1, keepdims=True)
 
-    # APS split-conformal qhat on calibration split (calibrated probs)
-    pc = calibrated(Xcal)
-    ycal_idx = np.array([LABELS.index(v) for v in ycal])
-    scores = 1.0 - pc[np.arange(len(ycal_idx)), ycal_idx]
-    n = len(ycal_idx); k = min(max(int(np.ceil((n+1)*(1-ALPHA))),1), n)
-    qhat = float(np.sort(scores)[k-1])
+def ece(yt: np.ndarray, p: np.ndarray, bins: int = 10) -> float:
+    conf, pred = p.max(1), p.argmax(1)
+    out = 0.0
+    for lo, hi in zip(np.linspace(0, 1, bins + 1)[:-1], np.linspace(0, 1, bins + 1)[1:]):
+        m = (conf > lo) & (conf <= hi)
+        if m.any():
+            out += m.mean() * abs((pred[m] == yt[m]).mean() - conf[m].mean())
+    return float(out)
 
-    # metrics on test
-    p_te = calibrated(Xte)
-    yte_idx = np.array([LABELS.index(v) for v in yte])
-    yte_oh = onehot(yte_idx, len(LABELS))
-    pred = np.array([LABELS[i] for i in p_te.argmax(1)])
-    p_raw_te = model.predict_proba(Xte)[:, idx]
-    cov = float(((1.0 - p_te[np.arange(len(yte_idx)), yte_idx]) <= qhat).mean())
-    setsz = float(np.maximum(((1.0 - p_te) <= qhat).sum(1), 1).mean())
-    metrics = {
-        "test_accuracy": round(accuracy_score(yte, pred),4),
-        "test_macro_f1": round(f1_score(yte, pred, average="macro"),4),
-        "ece_uncalibrated": round(ece(yte_oh, p_raw_te),4),
-        "ece_calibrated": round(ece(yte_oh, p_te),4),
-        "conformal_coverage": round(cov,4),
-        "conformal_avg_set_size": round(setsz,4),
-        "conformal_target": 1-ALPHA,
+
+def stress_test(model: LiveModel, raw: pd.DataFrame) -> list[dict]:
+    """Make one factor worse for every row; risk should never fall."""
+    base = model.score(raw)
+    scen = {
+        "speed +20 km/h": lambda d: d.assign(Bike_Speed=d.Bike_Speed + 20),
+        "phone use": lambda d: d.assign(Talk_While_Riding="Regularly"),
+        "rain (from clear)": lambda d: d.assign(Weather=np.where(d.Weather == "Clear", "Rainy", d.Weather)),
+        "wet road": lambda d: d.assign(Road_condition="Wet"),
+        "night": lambda d: d.assign(Time_of_Day="Night"),
+        "traffic +2": lambda d: d.assign(Traffic_Density=(d.Traffic_Density + 2).clip(upper=8)),
+    }
+    rows = []
+    for name, f in scen.items():
+        delta = model.score(f(raw.copy())) - base
+        rows.append({"scenario": name, "mean_change": round(float(delta.mean()), 4),
+                     "pct_rows_risk_fell": round(float((delta < -1e-6).mean() * 100), 2)})
+    return rows
+
+
+def evaluate(model: LiveModel, raw: pd.DataFrame, y: np.ndarray) -> dict:
+    p = model.class_proba(raw)
+    pred = p.argmax(1)
+    onehot = np.eye(3)[y]
+    in_set = np.array([LABELS[y[i]].split()[0] in " ".join(model.conformal_set(p[i])) for i in range(len(y))])
+    sizes = np.array([len(model.conformal_set(r)) for r in p])
+    return {
+        "macro_f1": round(macro_f1(y, pred), 4),
+        "accuracy": round(float((pred == y).mean()), 4),
+        "ece": round(ece(y, p), 4),
+        "brier": round(float(((p - onehot) ** 2).sum(1).mean()), 4),
+        "conformal_coverage": round(float(in_set.mean()), 4),
+        "conformal_avg_set_size": round(float(sizes.mean()), 4),
     }
 
-    # value domains for the UI / validation
-    domains = {c: sorted(map(str, X[c].unique())) for c in cat_cols}
-    numeric = [c for c in ALLOWED if c not in cat_cols]
-    nranges = {c: [float(X[c].min()), float(X[c].max())] for c in numeric}
 
-    model.save_model(str(ART/"tier1_catboost.cbm"))
-    joblib.dump(isos, ART/"isotonics.joblib")
-    meta = {"labels": LABELS, "risk_weights": RISK_W, "cat_cols": cat_cols,
-            "numeric_cols": numeric, "feature_order": ALLOWED, "alpha": ALPHA,
-            "qhat": qhat, "metrics": metrics, "domains": domains,
-            "numeric_ranges": nranges, "model_version": "rideguard-tier1-2026-06"}
-    json.dump(meta, open(ART/"meta.json","w"), indent=2)
-    print("metrics:", json.dumps(metrics))
-    print("saved artifacts to", ART)
+def build(raw: pd.DataFrame, y: np.ndarray, idx: list[np.ndarray], monotone: bool) -> LiveModel:
+    tr, cal, con, _ = idx
+    X = encode(raw)
+    crash = fit_binary(X.iloc[tr], (y[tr] >= 1).astype(int), monotone)
+    severe = fit_binary(X.iloc[tr], (y[tr] >= 2).astype(int), monotone)
+    iso_c = fit_isotonic(crash.predict_proba(X.iloc[cal])[:, 1], (y[cal] >= 1).astype(float))
+    iso_s = fit_isotonic(severe.predict_proba(X.iloc[cal])[:, 1], (y[cal] >= 2).astype(float))
+    model = LiveModel(crash, severe, iso_c, iso_s, qhat=1.0, meta={})
+    # split-conformal (LAC score) on its own split
+    p = model.class_proba(raw.iloc[con])
+    scores = np.sort(1.0 - p[np.arange(len(con)), y[con]])
+    k = min(max(int(np.ceil((len(con) + 1) * (1 - ALPHA))), 1), len(con))
+    model.qhat = float(scores[k - 1])
+    return model
+
+
+def main() -> None:
+    df = pd.read_excel(find_data())
+    raw = df[RAW_FEATURES].copy()
+    y = df["Accident_Severity"].astype(str).map({l: i for i, l in enumerate(LABELS)}).to_numpy()
+    idx = split(y)
+    te = idx[3]
+    print(f"rows {len(df)} | train {len(idx[0])} calib {len(idx[1])} conformal {len(idx[2])} test {len(te)}")
+
+    free = build(raw, y, idx, monotone=False)
+    model = build(raw, y, idx, monotone=True)
+
+    sample = raw.iloc[te].sample(min(2000, len(te)), random_state=SEED)
+    report = {
+        "test": evaluate(model, raw.iloc[te], y[te]),
+        "test_unconstrained_same_inputs": evaluate(free, raw.iloc[te], y[te]),
+        "stress_test": stress_test(model, sample),
+        "stress_test_unconstrained": stress_test(free, sample),
+    }
+    # Average score points each factor adds across the test set (for the About page).
+    imp: dict[str, list[float]] = {}
+    for row in sample.head(500).to_dict("records"):
+        for f in model.factors(row, top=10):
+            imp.setdefault(f["id"], []).append(f["impact"])
+    report["mean_factor_points"] = {k: round(float(np.sum(v) / 500 * 100), 2) for k, v in
+                                    sorted(imp.items(), key=lambda kv: -sum(kv[1]))}
+
+    model.meta = {
+        "model_version": MODEL_VERSION,
+        "inputs": RAW_FEATURES,
+        "labels": LABELS,
+        "alpha": ALPHA,
+        "ranges": {"Bike_Speed": [20, 120], "Speed_Limit": [40, 80], "Traffic_Density": [1, 8]},
+        "data": {"file": "MotorBike_Accident.xlsx", "rows": int(len(df)),
+                 "splits": {"train": len(idx[0]), "calibration": len(idx[1]),
+                            "conformal": len(idx[2]), "test": len(te)}},
+        "metrics": report,
+    }
+    model.save(ART)
+    print(json.dumps(report, indent=2))
+    print("saved", ART)
+
 
 if __name__ == "__main__":
     main()

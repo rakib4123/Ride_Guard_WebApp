@@ -1,4 +1,4 @@
-import type { Hotspot, LatLon } from '@rideguard/shared';
+import type { LatLon, SpatialGrid } from '@rideguard/shared';
 import { FUSION_LAMBDA, makeSpatialPrior } from '@rideguard/shared';
 import { RISK_TOKENS } from '@/lib/riskTokens';
 import { levelFor } from '@/lib/format';
@@ -14,11 +14,11 @@ export function distMeters(a: LatLon, b: LatLon): number {
   return 2 * R_EARTH * Math.asin(Math.sqrt(h));
 }
 
-/** The API's spatial prior, built from the same shared code so the two agree. */
-let priorCache: { hotspots: Hotspot[]; fn: (p: LatLon) => number } | null = null;
-export function spatialPriorAt(p: LatLon, hotspots: Hotspot[]): number {
-  if (priorCache?.hotspots !== hotspots) {
-    priorCache = { hotspots, fn: makeSpatialPrior(hotspots) };
+/** The API's location prior, built from the same shared code so the two agree. */
+let priorCache: { grid: SpatialGrid[]; fn: (p: LatLon) => number } | null = null;
+export function spatialPriorAt(p: LatLon, grid: SpatialGrid[]): number {
+  if (!priorCache || priorCache.grid !== grid) {
+    priorCache = { grid, fn: makeSpatialPrior(grid) };
   }
   return priorCache.fn(p);
 }
@@ -83,7 +83,7 @@ export async function fetchNearbyRoads(center: LatLon, radiusM = 600): Promise<L
  */
 export function buildRiskRoads(
   roads: LatLon[][],
-  hotspots: Hotspot[],
+  grid: SpatialGrid[],
   behaviour: number,
   cap = 800,
 ): RiskRoad[] {
@@ -97,7 +97,7 @@ export function buildRiskRoads(
       const a = road[i];
       const b = road[i + 1];
       const mid = { lat: (a.lat + b.lat) / 2, lon: (a.lon + b.lon) / 2 };
-      const c = riskHexFor(fuseRisk(behaviour, spatialPriorAt(mid, hotspots)));
+      const c = riskHexFor(fuseRisk(behaviour, spatialPriorAt(mid, grid)));
       if (c !== runColor) {
         if (run.length >= 2) { out.push({ points: run, color: runColor }); count++; }
         runColor = c;

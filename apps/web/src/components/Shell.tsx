@@ -7,6 +7,7 @@ import { TabNav } from '@/components/TabNav';
 import { PlaceholderBanner } from '@/components/PlaceholderBanner';
 import { AccountBar } from '@/components/AccountBar';
 import { Splash } from '@/components/Splash';
+import { nextPath } from '@/lib/nav';
 
 /** How long the branded splash is held before content may take over. */
 const MIN_SPLASH_MS = 1200;
@@ -29,10 +30,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, []);
   const booting = !minSplashDone || (configured && loading);
 
+  // Guests may use everything except their saved trips (that screen asks them
+  // to sign in). Once signed in, the auth pages send the rider back to where
+  // they came from.
   useEffect(() => {
     if (!configured || loading) return;
-    if (!user && !isAuthRoute) router.replace('/login');
-    if (user && isAuthRoute) router.replace('/now');
+    if (user && isAuthRoute) router.replace(nextPath());
   }, [user, loading, configured, isAuthRoute, router]);
 
   if (booting) {
@@ -42,10 +45,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
   if (isAuthRoute) {
     return <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">{children}</div>;
   }
-  if (configured && !user && !isAuthRoute) {
-    return <Splash />; // redirecting to /login
-  }
-
   // Full-bleed map screens render edge-to-edge; the nav bar floats on top.
   if (FULL_BLEED.includes(path)) {
     return (
@@ -63,7 +62,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="font-display text-lg font-bold tracking-tight text-text">
             Ride<span className="text-signal">Guard</span>
           </span>
-          <span className="font-mono text-[10px] text-muted">DHAKA</span>
         </div>
         <AccountBar />
       </header>

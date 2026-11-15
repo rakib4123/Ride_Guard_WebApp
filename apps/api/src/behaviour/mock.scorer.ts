@@ -4,88 +4,57 @@ import type {
   ClassProbabilities,
   FeatureVector,
   RiskFactor,
+  RiskFactorId,
   SeverityClass,
 } from '@rideguard/shared';
 import { BehaviourScorer } from './behaviour.scorer';
 
 /**
- * Transparent placeholder scorer (Handoff Section 6, option 3). It reproduces
- * the handoff's mock additive logic to produce the ordinal score `s`, then
- * derives a 3-class probability split whose ordinal value equals `s`, so the
- * downstream maths is identical to what the real CatBoost+isotonic model will
- * feed. Clearly flagged as a placeholder via `isPlaceholder: true`.
+ * Transparent placeholder used when the model service is unset or unreachable.
+ * Same inputs and factor ids as the real model, simple additive rules, and
+ * always flagged `isPlaceholder: true` so the rider sees "sample reading".
  */
 @Injectable()
 export class MockScorer implements BehaviourScorer {
   score(f: FeatureVector): BehaviourResult {
-    const contributions: RiskFactor[] = [];
-    let s = 0.15;
-    const add = (name: string, amount: number) => {
+    const factors: RiskFactor[] = [];
+    let s = 0.1;
+    const add = (id: RiskFactorId, name: string, amount: number) => {
       s += amount;
-      contributions.push({ name, impact: amount });
+      factors.push({ id, name, impact: amount });
     };
 
-    if (f.Talk_While_Riding === 'Regularly') add('Phone use while riding', 0.25);
-    else if (f.Talk_While_Riding === 'Sometimes') add('Phone use while riding', 0.12);
-    if (f.Smoke_While_Riding === 'Regularly') add('Smoking while riding', 0.2);
-    else if (f.Smoke_While_Riding === 'Sometimes') add('Smoking while riding', 0.1);
-    if (f.Biker_Alcohol === 1) add('Alcohol', 0.25);
-    if (f.Wearing_Helmet === 'No') add('No helmet', 0.1);
-    if (f.Bike_Speed > f.Speed_Limit) add('Over the speed limit', 0.1);
-    if (f.Traffic_Density >= 6) add('Heavy traffic', 0.05);
+    const over = f.Bike_Speed - f.Speed_Limit;
+    if (over > 0) add('overLimit', 'Over the speed limit', Math.min(0.4, over / 100));
+    if (f.Talk_While_Riding !== 'Never') add('phone', 'Phone use while riding', 0.25);
+    if (f.Weather !== 'Clear') add('weather', 'Rain or fog', 0.05);
+    if (f.Road_condition === 'Wet') add('wet', 'Wet road', 0.05);
+    if (f.Time_of_Day === 'Night' || f.Time_of_Day === 'Evening') add('dark', 'Riding in the dark', 0.05);
+    if (f.Traffic_Density >= 6) add('traffic', 'Heavy traffic', 0.05);
 
     s = Math.min(s, 1);
-
     const probabilities = this.probabilitiesFromOrdinal(s);
-    const topFactors = contributions
-      .sort((a, b) => b.impact - a.impact)
-      .slice(0, 4);
-
     return {
       score: s,
       probabilities,
-      factors: topFactors,
+      factors: factors.sort((a, b) => b.impact - a.impact).slice(0, 4),
       conformalSet: this.conformalSet(probabilities),
       isPlaceholder: true,
     };
   }
 
-  /**
-   * Build class probabilities [No Accident, Moderate, Severe] whose ordinal
-   * score 0*pNo + 0.5*pMod + 1*pSev exactly equals s (Section 5 weights).
-   */
+  /** Probabilities [No Accident, Moderate, Severe] whose ordinal value equals s. */
   private probabilitiesFromOrdinal(s: number): ClassProbabilities {
-    let noAccident: number;
-    let moderate: number;
-    let severe: number;
-    if (s <= 0.5) {
-      severe = 0;
-      moderate = 2 * s;
-      noAccident = 1 - moderate;
-    } else {
-      noAccident = 0;
-      moderate = 2 * (1 - s);
-      severe = 1 - moderate;
-    }
-    return {
-      noAccident: this.clamp01(noAccident),
-      moderate: this.clamp01(moderate),
-      severe: this.clamp01(severe),
-    };
+    const clamp = (x: number) => Math.max(0, Math.min(1, x));
+    if (s <= 0.5) return { noAccident: clamp(1 - 2 * s), moderate: clamp(2 * s), severe: 0 };
+    return { noAccident: 0, moderate: clamp(2 * (1 - s)), severe: clamp(2 * s - 1) };
   }
 
-  /** Plausible classes at a coverage-like cutoff (placeholder for conformal). */
   private conformalSet(p: ClassProbabilities): SeverityClass[] {
     const entries: [SeverityClass, number][] = [
-      ['No Accident', p.noAccident],
-      ['Moderate', p.moderate],
-      ['Severe', p.severe],
+      ['No Accident', p.noAccident], ['Moderate', p.moderate], ['Severe', p.severe],
     ];
     const set = entries.filter(([, prob]) => prob >= 0.1).map(([cls]) => cls);
     return set.length ? set : [entries.sort((a, b) => b[1] - a[1])[0][0]];
-  }
-
-  private clamp01(x: number): number {
-    return Math.max(0, Math.min(1, x));
   }
 }

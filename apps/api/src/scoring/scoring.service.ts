@@ -1,8 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import {
   ADVISORY_THRESHOLDS,
   FUSION_LAMBDA,
   MODEL_VERSION,
+  ROUTE_MAX_KM,
   ROUTE_SAMPLE_METERS,
 } from '@rideguard/shared';
 import type {
@@ -55,6 +56,8 @@ export class ScoringService {
       isPlaceholder: b.isPlaceholder,
       modelVersion: MODEL_VERSION,
       scorerVersion: scorerVersion(b),
+      // The mock has no severity model; never pass one off from a placeholder.
+      severity: b.isPlaceholder ? null : (b.severity ?? null),
     };
   }
 
@@ -67,6 +70,13 @@ export class ScoringService {
     features: FeatureVector,
     path: LatLon[],
   ): Promise<ScoreRouteResponse> {
+    // Sampling is linear in route length, so cap the length before sampling:
+    // two far-apart points would otherwise expand into hundreds of thousands
+    // of samples (and a response of tens of MB) from a ~70-byte request.
+    const km = pathLengthKm(path);
+    if (km > ROUTE_MAX_KM) {
+      throw new BadRequestException(`Route is ${Math.round(km)} km; the limit is ${ROUTE_MAX_KM} km.`);
+    }
     const b: BehaviourResult = await this.behaviour.score(features);
     const samples = samplePolyline(path, ROUTE_SAMPLE_METERS);
 
@@ -112,6 +122,13 @@ export class ScoringService {
 function scorerVersion(b: BehaviourResult): string {
   if (b.isPlaceholder) return 'mock';
   return b.modelVersion ?? 'unknown';
+}
+
+/** Total length of a polyline in km. */
+export function pathLengthKm(path: LatLon[]): number {
+  let m = 0;
+  for (let i = 0; i < path.length - 1; i++) m += haversineMeters(path[i], path[i + 1]);
+  return m / 1000;
 }
 
 /** Sample a polyline at a fixed spacing (metres), keeping vertices. */

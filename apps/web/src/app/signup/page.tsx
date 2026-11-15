@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import { Card } from '@/components/Card';
+import { nextPath } from '@/lib/nav';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function SignupPage() {
     const { data, error } = await supabase.auth.signUp({ email, password: pw });
     setBusy(false);
     if (error) { setErr(error.message); return; }
-    if (data.session) router.replace('/now');           // confirmation disabled → straight in
+    if (data.session) router.replace(nextPath());           // confirmation disabled → straight in
     else setNote('Account created. Check your email to confirm, then sign in.');
   };
 
@@ -47,6 +48,9 @@ export default function SignupPage() {
       <p className="mt-4 text-center text-sm text-muted">
         Already have an account? <Link href="/login" className="font-medium text-signal">Sign in</Link>
       </p>
+      <Link href="/now" className="mt-2 flex min-h-11 items-center justify-center text-sm font-medium text-muted underline-offset-2 hover:underline">
+        Continue as guest
+      </Link>
     </Card>
   );
 }

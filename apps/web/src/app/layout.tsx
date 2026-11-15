@@ -3,7 +3,8 @@ import type { Metadata, Viewport } from 'next';
 import { Hind_Siliguri, JetBrains_Mono } from 'next/font/google';
 import { LocaleProvider } from '@/i18n/LocaleContext';
 import { AuthProvider } from '@/context/AuthContext';
-import { ProfileProvider } from '@/context/ProfileContext';
+import { ConditionsProvider } from '@/context/ConditionsContext';
+import { LocationProvider } from '@/context/LocationContext';
 import { AlertsProvider } from '@/context/AlertsContext';
 import { Shell } from '@/components/Shell';
 
@@ -24,7 +25,7 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
   title: 'RideGuard',
-  description: 'Rider risk advisory for Dhaka motorcyclists.',
+  description: 'Riding-risk advisory for motorcyclists, from what your phone measures and where crashes happen.',
 };
 export const viewport: Viewport = { themeColor: '#EDF1F7' };
 
@@ -34,11 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-body">
         <LocaleProvider>
           <AuthProvider>
-            <ProfileProvider>
+            <LocationProvider>
+            <ConditionsProvider>
               <AlertsProvider>
                 <Shell>{children}</Shell>
               </AlertsProvider>
-            </ProfileProvider>
+            </ConditionsProvider>
+            </LocationProvider>
           </AuthProvider>
         </LocaleProvider>
       </body>

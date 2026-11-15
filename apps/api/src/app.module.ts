@@ -5,6 +5,7 @@ import { SpatialModule } from './spatial/spatial.module';
 import { ScoringModule } from './scoring/scoring.module';
 import { TripsModule } from './trips/trips.module';
 import { TrafficModule } from './traffic/traffic.module';
+import { PresenceModule } from './presence/presence.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -15,6 +16,7 @@ import { HealthController } from './health/health.controller';
     ScoringModule,
     TripsModule,
     TrafficModule,
+    PresenceModule,
   ],
   controllers: [HealthController],
 })

@@ -2,6 +2,7 @@
 
 import type { RiskFactor } from '@rideguard/shared';
 import { useT } from '@/i18n/LocaleContext';
+import type { MessageKey } from '@/i18n/messages/en';
 
 export function TopFactors({ factors }: { factors: RiskFactor[] }) {
   const t = useT();
@@ -18,7 +19,7 @@ export function TopFactors({ factors }: { factors: RiskFactor[] }) {
       {factors.map((f) => (
         <li key={f.name}>
           <div className="mb-1 flex items-baseline justify-between gap-3">
-            <span className="text-sm text-text">{f.name}</span>
+            <span className="text-sm text-text">{t(`factor.${f.id}` as MessageKey) ?? f.name}</span>
             <span className="font-mono tabular text-xs text-muted">
               +{Math.round(f.impact * 100)}
             </span>

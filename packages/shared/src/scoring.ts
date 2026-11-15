@@ -8,8 +8,15 @@ export interface LatLon {
   lon: number;
 }
 
-/** A named driver of the score (SHAP in production; heuristic in the mock). */
+/** Factor ids the scorers report; the web app translates them. */
+export type RiskFactorId = 'overLimit' | 'phone' | 'weather' | 'wet' | 'dark' | 'traffic';
+
+/**
+ * A measured factor that raised the score. `impact` is in score units (0..1):
+ * how much lower the score would be with that factor at its safe setting.
+ */
 export interface RiskFactor {
+  id: RiskFactorId;
   name: string;
   impact: number;
 }
@@ -19,6 +26,20 @@ export interface ClassProbabilities {
   noAccident: number;
   moderate: number;
   severe: number;
+}
+
+/**
+ * "If a motorcycle crash happened here, now, how likely is the rider to be
+ * killed or seriously injured?" From real UK police records (STATS19).
+ */
+export interface SeverityEstimate {
+  /** Probability of death or serious injury, given a crash. */
+  ksi: number;
+  /** Where the estimate's data comes from. */
+  source: string;
+  /** ISO countries where it has been checked on held-out data. */
+  validatedIn: string[];
+  modelVersion: string;
 }
 
 /** Output of the behaviour scorer (the swappable Tier-1 seam). */
@@ -33,6 +54,8 @@ export interface BehaviourResult {
   isPlaceholder: boolean;
   /** Version of the model artifact that produced the score (the model service reports it). */
   modelVersion?: string;
+  /** Severity if a crash happened, when the model service has the severity model. */
+  severity?: SeverityEstimate | null;
 }
 
 /** Request to score a single point. */
@@ -54,6 +77,8 @@ export interface ScorePointResponse {
   modelVersion: string;
   /** Which scorer produced behaviourScore: the model artifact version, or 'mock'. */
   scorerVersion: string;
+  /** Death-or-serious-injury chance if a crash happened here (null when unavailable). */
+  severity: SeverityEstimate | null;
 }
 
 /** One sampled point along a route. */

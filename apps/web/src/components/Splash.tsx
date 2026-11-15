@@ -31,7 +31,7 @@ export function Splash() {
         </div>
         <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.25em] text-muted"
           style={{ animation: 'rg-pulse 1.6s ease-in-out infinite' }}>
-          Dhaka · Ride safe
+          Ride safe
         </div>
       </div>
 

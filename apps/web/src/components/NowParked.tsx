@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
-import type { FeatureVector, LatLon } from '@rideguard/shared';
+import type { FeatureVector, LatLon, TripCrowd } from '@rideguard/shared';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n/LocaleContext';
 import { fill } from '@/i18n/fill';
@@ -13,14 +13,21 @@ import { buildTrip } from '@/lib/buildTrip';
 import { saveTripToAccount } from '@/lib/trips';
 import { shortLabel } from '@/lib/geocode';
 import { fmt } from '@/lib/fmt';
+import { speedUnitFor, inUnit } from '@/lib/units';
+import { useConditions } from '@/context/ConditionsContext';
+import { SeverityLine } from '@/components/SeverityLine';
 import type { Verdict } from '@/lib/verdict';
 import type { NowScore } from '@/hooks/useNowScore';
 import { RiskVerdict } from '@/components/RiskVerdict';
 import { LocationSearch } from '@/components/LocationSearch';
 import { LanguageChip } from '@/components/LanguageToggle';
 import { TopFactors } from '@/components/TopFactors';
-import { TripTogglesPanel } from '@/components/TripTogglesPanel';
+import { MeasuredPanel } from '@/components/MeasuredPanel';
 import { Lamp } from '@/components/Field';
+import { BottomSheet, LocateIcon, MapFab } from '@/components/BottomSheet';
+import { MapCredit } from '@/components/map/MapCredit';
+import { useMe } from '@/context/LocationContext';
+import { signInHref } from '@/lib/nav';
 
 const PointPickerMap = dynamic(
   () => import('@/components/MapView').then((m) => m.PointPickerMap),
@@ -38,6 +45,8 @@ export interface LastRide {
   startLoc: LatLon;
   startName: string;
   distanceKm: number;
+  /** Busiest crowd measured on the ride (D2D), if measured. */
+  crowd: TripCrowd | null;
 }
 
 /**
@@ -59,12 +68,17 @@ export function NowParked({
   const t = useT();
   const { user } = useAuth();
   const { result } = now;
+  const { country } = useConditions();
+  const unit = speedUnitFor(country);
   const initials = (user?.email ?? 'R').slice(0, 2).toUpperCase();
 
   const help: string | null =
     now.error ? t('label.unknownHelp')
       : !now.hasLocation && !now.locating ? t('now.turnOnLocation')
         : null;
+
+  const { me } = useMe();
+  const meFix = me ? { lat: me.lat, lon: me.lon, accuracyM: me.accuracyM, headingDeg: me.headingDeg } : null;
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-canvas">
@@ -75,99 +89,100 @@ export function NowParked({
           level={verdict.level === 'Unknown' ? undefined : verdict.level}
           riskRoads={now.riskRoads}
           zoomControl={false}
+          me={meFix}
+          follow={now.followMe}
+          onUserPan={now.stopFollowing}
+          showPin={!now.followMe}
         />
       </div>
 
-      {/* Top: search · language · account */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1200] px-3"
+      {/* Top: floating search pill · language · account */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1250] px-3"
         style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="mx-auto flex max-w-2xl items-center gap-2">
-          <div className="pointer-events-auto min-w-0 flex-1 rounded-2xl border border-line bg-white/95 px-2 py-1 shadow-soft backdrop-blur">
-            <LocationSearch placeholder={t('now.search')}
+          <div className="pointer-events-auto min-w-0 flex-1">
+            <LocationSearch placeholder={t('now.search')} near={now.loc}
               onSelect={(l, label) => { now.setLoc(l); now.setLocName(shortLabel(label)); now.setLocNote(null); }} />
           </div>
           <LanguageChip />
           <Link href="/profile" aria-label={t('common.account')}
-            className="pointer-events-auto flex h-11 w-11 flex-none items-center justify-center rounded-full border border-line bg-signal/10 text-sm font-semibold text-signal shadow-soft">
-            {initials}
+            className="pointer-events-auto flex h-12 w-12 flex-none items-center justify-center rounded-full bg-white text-sm font-semibold text-signal shadow-lift">
+            {user ? initials : <GuestIcon />}
           </Link>
         </div>
       </div>
 
-      {/* Locate */}
-      <button onClick={now.useMyLocation} disabled={now.locating} aria-label={t('now.useLocation')}
-        className="absolute right-3 z-[1200] flex h-12 w-12 items-center justify-center rounded-full border border-line bg-white text-signal shadow-soft disabled:opacity-60"
-        style={{ bottom: 'calc(50% - 1rem)' }}>
-        <PinIcon />
-      </button>
-
-      {/* Bottom sheet */}
-      <div className="absolute inset-x-0 bottom-0 z-[1200]">
-        <div className="mx-auto max-w-2xl rounded-t-3xl border-t border-line bg-white px-4 pt-3"
-          style={{ boxShadow: '0 -10px 30px rgba(15,23,42,0.10)', paddingBottom: 'calc(3.75rem + env(safe-area-inset-bottom))' }}>
-
-          <RiskVerdict verdict={verdict} size="lg" pending={(now.scoring || now.locating) && !result} />
-          <p className="mt-2 truncate text-sm font-medium text-text">
-            {now.locName || (now.locating ? t('common.locating') : '')}
-          </p>
-          {help && <p className="mt-1 text-sm text-muted">{help}</p>}
-          {now.locNote && <p className="mt-2 rounded-lg bg-signal/5 px-3 py-2 text-xs text-signal">{now.locNote}</p>}
-
-          {result && (
-            <div className="mt-2 space-y-1 text-sm">
-              <ReasonLine label={t('label.why')}
-                items={verdict.modelReasons.length ? verdict.modelReasons.map(t) : [t('now.noReasons')]} />
-              {verdict.watchOuts.length > 0 && (
-                <ReasonLine label={t('label.watchOut')} items={verdict.watchOuts.map(t)} muted />
-              )}
-            </div>
-          )}
-
-          <button onClick={onStartRide}
-            className="mt-3 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-signal text-lg font-bold text-white shadow-soft">
-            <PlayIcon /> {t('label.startRide')}
-          </button>
-
-          <button onClick={() => setDetailsOpen(!detailsOpen)} aria-expanded={detailsOpen}
-            className="mx-auto mt-1 flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-signal">
-            {detailsOpen ? t('now.hideDetails') : t('now.whyReading')}
-            <span aria-hidden="true">{detailsOpen ? '▴' : '▾'}</span>
-          </button>
-
-          {detailsOpen && (
-            <div className="max-h-[42vh] space-y-4 overflow-y-auto border-t border-line pt-3">
-              {result && (
-                <>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <Metric label={t('now.detail.riding')} value={fmt.pct(result.behaviourScore)} />
-                    <Metric label={t('now.detail.area')} value={fmt.pct(result.spatialPrior)} />
-                    <Metric label={t('now.detail.combined')} value={fmt.pct(result.R)} highlight />
-                  </div>
-                  <div>
-                    <h3 className="mb-2 text-sm font-semibold text-text">{t('now.detail.drivers')}</h3>
-                    <TopFactors factors={result.topFactors} />
-                  </div>
-                  {result.conformalSet.length > 0 && (
-                    <p className="text-sm text-text">
-                      <span className="font-semibold">{t('now.detail.conformal')}: </span>
-                      {result.conformalSet.map((c) => t(`sev.${c}` as MessageKey)).join(' · ')}
-                    </p>
-                  )}
-                </>
-              )}
-              <p className="text-xs text-muted">{fill(t('now.detail.auto'), { limit: features.Speed_Limit })}</p>
-
-              <div className="border-t border-line pt-3">
-                <h3 className="mb-1 text-sm font-semibold text-text">{t('now.conditions')}</h3>
-                <p className="mb-3 text-xs text-muted">{t('now.conditionsHelp')}</p>
-                <TripTogglesPanel />
+      <BottomSheet
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        label={detailsOpen ? t('now.hideDetails') : t('now.whyReading')}
+        floating={
+          <MapFab onClick={now.useMyLocation} disabled={now.locating} active={now.followMe}
+            label={now.followMe ? t('now.useLocation') : t('now.recenter')}>
+            <LocateIcon following={now.followMe} />
+          </MapFab>
+        }
+        peek={
+          <>
+            <RiskVerdict verdict={verdict} size="lg" pending={(now.scoring || now.locating) && !result} />
+            <p className="mt-2 truncate text-sm font-medium text-text">
+              {now.locName || (now.locating ? t('common.locating') : '')}
+            </p>
+            {help && <p className="mt-1 text-sm text-muted">{help}</p>}
+            {now.locNote && <p className="mt-2 rounded-lg bg-signal/5 px-3 py-2 text-xs text-signal">{now.locNote}</p>}
+            {result && (
+              <div className="mt-2 space-y-1 text-sm">
+                <ReasonLine label={t('label.why')}
+                  items={verdict.modelReasons.length ? verdict.modelReasons.map(t) : [t('now.noReasons')]} />
+                {verdict.watchOuts.length > 0 && (
+                  <ReasonLine label={t('label.watchOut')} items={verdict.watchOuts.map(t)} muted />
+                )}
               </div>
-
-              <SaveRide now={now} verdict={verdict} features={features} lastRide={lastRide} onSaved={onRideSaved} />
+            )}
+            <button onClick={onStartRide}
+              className="mt-3 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-signal text-lg font-bold text-white shadow-soft active:scale-[0.99]">
+              <PlayIcon /> {t('label.startRide')}
+            </button>
+            <button onClick={() => setDetailsOpen(!detailsOpen)} aria-expanded={detailsOpen}
+              className="mx-auto mt-1 flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-signal">
+              {detailsOpen ? t('now.hideDetails') : t('now.whyReading')}
+              <span aria-hidden="true" className={`inline-block transition-transform duration-300 ${detailsOpen ? 'rotate-180' : ''}`}>▾</span>
+            </button>
+          </>
+        }
+      >
+        {result && (
+          <>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <Metric label={t('now.detail.riding')} value={fmt.pct(result.behaviourScore)} />
+              <Metric label={t('now.detail.area')} value={fmt.pct(result.spatialPrior)} />
+              <Metric label={t('now.detail.combined')} value={fmt.pct(result.R)} highlight />
             </div>
-          )}
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-text">{t('now.detail.drivers')}</h3>
+              <TopFactors factors={result.topFactors} />
+            </div>
+            {result.conformalSet.length > 0 && (
+              <p className="text-sm text-text">
+                <span className="font-semibold">{t('now.detail.conformal')}: </span>
+                {result.conformalSet.map((c) => t(`sev.${c}` as MessageKey)).join(' · ')}
+              </p>
+            )}
+          </>
+        )}
+        {result?.severity && <SeverityLine severity={result.severity} country={country} />}
+        <p className="text-xs text-muted">{fill(t('now.detail.auto'), {
+          limit: inUnit(features.Speed_Limit, unit), unit: t(unit === 'mph' ? 'ride.speedUnitMph' : 'ride.speedUnit'),
+        })}</p>
+        <div className="border-t border-line pt-3">
+          <h3 className="mb-1 text-sm font-semibold text-text">{t('now.conditions')}</h3>
+          <p className="mb-3 text-xs text-muted">{t('now.conditionsHelp')}</p>
+          <MeasuredPanel features={features} unit={unit} />
         </div>
-      </div>
+        <SaveRide now={now} verdict={verdict} features={features} lastRide={lastRide} onSaved={onRideSaved}
+          onDiscard={() => { onRideSaved(); setDetailsOpen(false); }} />
+        <MapCredit className="pt-1" />
+      </BottomSheet>
     </div>
   );
 }
@@ -177,12 +192,14 @@ export function NowParked({
  * history; the research copy goes to the API only with consent, and the
  * consent switches govern only that copy.
  */
-function SaveRide({ now, verdict, features, lastRide, onSaved }: {
+function SaveRide({ now, verdict, features, lastRide, onSaved, onDiscard }: {
   now: NowScore;
   verdict: Verdict;
   features: FeatureVector;
   lastRide: LastRide | null;
   onSaved: () => void;
+  /** Throw away the finished ride without saving it. */
+  onDiscard: () => void;
 }) {
   const t = useT();
   const { user } = useAuth();
@@ -190,6 +207,18 @@ function SaveRide({ now, verdict, features, lastRide, onSaved }: {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const { result } = now;
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-between gap-3 border-t border-line pt-3">
+        <p className="text-sm text-muted">{t('now.save.signIn')}</p>
+        <Link href={signInHref('/now')}
+          className="flex min-h-11 flex-none items-center rounded-xl bg-signal px-4 text-sm font-semibold text-white shadow-soft">
+          {t('profile.signIn')}
+        </Link>
+      </div>
+    );
+  }
 
   const save = async () => {
     if (!result) return;
@@ -215,6 +244,7 @@ function SaveRide({ now, verdict, features, lastRide, onSaved }: {
           point: result, weather: now.weather, consent,
           startTime: lastRide?.startTime ?? new Date().toISOString(),
           distanceKm: lastRide?.distanceKm,
+          crowd: lastRide?.crowd ?? null,
         }));
         msg = t('now.save.doneResearch');
       } catch {
@@ -228,10 +258,18 @@ function SaveRide({ now, verdict, features, lastRide, onSaved }: {
 
   return (
     <div className="space-y-2 border-t border-line pt-3">
+      <div className="flex gap-2">
       <button disabled={!result || saving} onClick={save}
-        className="flex min-h-12 w-full items-center justify-center rounded-xl bg-signal px-4 text-sm font-semibold text-white shadow-soft disabled:opacity-40">
+        className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-signal px-4 text-sm font-semibold text-white shadow-soft disabled:opacity-40">
         {saving ? t('common.saving') : t('now.save.button')}
       </button>
+        {lastRide && (
+          <button onClick={onDiscard} disabled={saving}
+            className="flex min-h-12 items-center justify-center rounded-xl border border-line px-4 text-sm font-semibold text-text disabled:opacity-40">
+            {t('now.save.discard')}
+          </button>
+        )}
+      </div>
       <Lamp label={t('now.save.research')} on={consent.logging}
         onToggle={() => setConsent((c) => ({ ...c, logging: !c.logging }))} />
       {consent.logging && (
@@ -263,10 +301,12 @@ function Metric({ label, value, highlight }: { label: string; value: string; hig
 function PlayIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>;
 }
-function PinIcon() {
+
+/** Account button for a guest: a person outline instead of initials. */
+function GuestIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" />
     </svg>
   );
 }

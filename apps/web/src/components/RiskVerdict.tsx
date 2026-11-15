@@ -42,7 +42,7 @@ export function RiskVerdict({
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-xl2 ${s.pad}`}
+      className={`flex items-center gap-3 rounded-xl2 transition-colors duration-500 ${s.pad}`}
       style={{ background: token.surface, color: token.onSurface }}
       role="status"
       aria-live="polite"

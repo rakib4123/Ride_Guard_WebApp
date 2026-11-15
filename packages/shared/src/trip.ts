@@ -19,14 +19,25 @@ export interface TripWeather {
   rain_mm_hr: number;
 }
 
-export interface TripRiderContext {
-  helmet: string;
-  valid_license: string;
-  riding_experience_years: number;
+/** Crowd measured around the rider (D2D). Null fields were not measurable. */
+export interface TripCrowd {
+  /** RideGuard phones nearby, and those grouped into vehicles. */
+  riders_nearby: number | null;
+  vehicles_nearby: number | null;
+  /** Other Bluetooth devices nearby, and those grouped (null when the browser cannot scan). */
+  ble_devices: number | null;
+  ble_groups: number | null;
+}
+
+/** What the app measured — the model's inputs. Nothing here is asked of the rider. */
+export interface TripMeasuredContext {
   road_type: string;
-  phone_use: boolean;
-  alcohol: boolean;
+  speed_limit_kmh: number;
+  bike_speed_kmh: number;
   over_speed_limit: boolean;
+  phone_use: boolean;
+  traffic_density: number;
+  crowd: TripCrowd | null;
 }
 
 export interface PredictionSegment {
@@ -65,7 +76,7 @@ export interface TripLog {
     time_of_day: string;
     day_of_week: string;
     weather: TripWeather;
-    rider: TripRiderContext;
+    measured: TripMeasuredContext;
   };
   prediction: {
     behaviour_score: number;
@@ -77,6 +88,8 @@ export interface TripLog {
     is_placeholder: boolean;
     /** Model artifact version that scored the trip, or 'mock'. */
     scorer_version: string;
+    /** P(killed or seriously injured | crash) from the UK severity model, if available. */
+    severity_ksi?: number | null;
     top_factors: { name: string; impact: number }[];
     segments: PredictionSegment[];
   };

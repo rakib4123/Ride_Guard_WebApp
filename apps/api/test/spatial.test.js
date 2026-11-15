@@ -1,39 +1,59 @@
 /**
- * Spatial prior. The fusion rule treats pi = 0.5 as neutral, so the prior must
- * be centred on where crashes happen or the spatial tier silently discounts
- * every rider's risk (the bug this definition replaced).
+ * Location prior from the regional crash grids. Each region is scored with its
+ * own crashes; it may raise a reading at known crash places but never lower
+ * one, and anywhere outside the regions it is neutral (0.5).
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { makeSpatialPrior } = require('@rideguard/shared');
-const { hotspots } = require('../data/hotspots.json');
+const { makeSpatialPrior, cellIndex, regionAt } = require('@rideguard/shared');
+const data = require('../data/hotspots.json');
 
-const prior = makeSpatialPrior(hotspots);
+const prior = makeSpatialPrior(data.regions);
+const byId = Object.fromEntries(data.regions.map((r) => [r.id, r]));
 
-test('no hotspot data gives the neutral prior', () => {
+test('the data carries Dhaka, Great Britain and New York City', () => {
+  assert.deepEqual(Object.keys(byId).sort(), ['dhaka', 'gb', 'nyc']);
+});
+
+test('no grid gives the neutral prior', () => {
+  assert.equal(makeSpatialPrior(null)({ lat: 23.75, lon: 90.39 }), 0.5);
   assert.equal(makeSpatialPrior([])({ lat: 23.75, lon: 90.39 }), 0.5);
 });
 
-test('the prior is centred: about half the crashes sit at or above 0.5', () => {
-  const total = hotspots.reduce((s, h) => s + h.count, 0);
-  const above = hotspots.filter((h) => prior(h) >= 0.5).reduce((s, h) => s + h.count, 0);
-  const share = above / total;
-  assert.ok(share > 0.4 && share < 0.6, `share at or above 0.5 was ${share}`);
+test('each region\'s busiest cell sits at the top of the scale', () => {
+  for (const r of data.regions) {
+    const c = r.cells[0];
+    // A point inside that cell: undo cellIndex.
+    const lat = ((c.i + 0.5) * r.gridM) / 111_320;
+    const lon = ((c.j + 0.5) * r.gridM) / (111_320 * Math.cos((r.lat0 * Math.PI) / 180));
+    assert.deepEqual(cellIndex({ lat, lon }, r.gridM, r.lat0), [c.i, c.j]);
+    assert.equal(regionAt(data.regions, { lat, lon }).id, r.id);
+    assert.ok(prior({ lat, lon }) > 0.95, `${r.id} busiest cell scored ${prior({ lat, lon })}`);
+  }
 });
 
-test('the densest hotspot is at the top of the scale', () => {
-  const densest = [...hotspots].sort((a, b) => b.count - a.count)[0];
-  assert.ok(prior(densest) > 0.95);
+test('the prior never drops below neutral, and stays in [0.5, 1]', () => {
+  for (const r of data.regions) {
+    const b = r.bbox;
+    for (let k = 0; k < 200; k++) {
+      const p = prior({
+        lat: b.minLat + ((k % 20) / 19) * (b.maxLat - b.minLat),
+        lon: b.minLon + (Math.floor(k / 20) / 9) * (b.maxLon - b.minLon),
+      });
+      assert.ok(p >= 0.5 && p <= 1, `${r.id} out of range: ${p}`);
+    }
+  }
 });
 
-test('outside the crash data coverage the prior is neutral, not a discount', () => {
-  assert.equal(prior({ lat: 22.3569, lon: 91.7832 }), 0.5); // Chattogram
+test('outside every region the prior is neutral', () => {
+  assert.equal(prior({ lat: 22.3569, lon: 91.7832 }), 0.5);   // Chattogram
+  assert.equal(prior({ lat: 48.8566, lon: 2.3522 }), 0.5);    // Paris
 });
 
-test('the prior stays in [0,1]', () => {
-  for (let i = 0; i < 50; i++) {
-    const p = prior({ lat: 23.7 + i * 0.004, lon: 90.34 + i * 0.0025 });
-    assert.ok(p >= 0 && p <= 1, `out of range: ${p}`);
+test('every region carries its check on later years and a data credit', () => {
+  for (const r of data.regions) {
+    assert.ok(r.validation.lift_vs_random_area > 1, `${r.id} is no better than a random map`);
+    assert.ok(r.credit && r.credit.length > 10);
   }
 });
