@@ -19,5 +19,3 @@ __pycache__/
 apps/model/.venv/
 apps/model/catboost_info/
 
-# superpowers scratch (mockups, SDD ledger)
-.superpowers/
